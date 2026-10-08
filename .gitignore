@@ -1,0 +1,5 @@
+node_modules/
+temp_uploads/
+cloudflared.exe
+.env
+database.sqlite
