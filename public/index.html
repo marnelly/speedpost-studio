@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpeedPost Studio — Agendador de Vídeos & Automação</title>
+  <meta name="description" content="Plataforma de agendamento de vídeos e Reels integrada à API oficial da SpeedPost." />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              300: '#c4b5fd',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+            },
+            dark: {
+              950: '#0a0a0f',
+              900: '#11111a',
+              850: '#171722',
+              800: '#1e1e2d',
+              700: '#2b2b3f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238b5cf6'><path d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/></svg>" />
+</head>
+<body class="bg-dark-950 text-gray-100 min-h-screen flex flex-col selection:bg-brand-600 selection:text-white">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="sticky top-0 z-50 bg-dark-900/90 backdrop-blur-md border-b border-white/[0.08]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Brand & Workspace -->
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 via-brand-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-brand-500/25">
+            <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-lg tracking-tight text-white">SpeedPost</span>
+              <span class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30">Studio</span>
+            </div>
+            <p class="text-xs text-gray-400 hidden sm:block">Agendador Profissional de Vídeos</p>
+          </div>
+        </div>
+
+        <!-- Account Badge -->
+        <div id="active-account-badge" class="hidden md:flex items-center gap-2 pl-4 border-l border-white/10">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center text-xs font-bold">
+            <i data-lucide="instagram" class="w-3.5 h-3.5 text-white"></i>
+          </div>
+          <div class="text-left">
+            <div class="text-xs font-medium text-white flex items-center gap-1.5">
+              <span id="account-username">@cenasqueamo._</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            </div>
+            <div class="text-[10px] text-gray-400">
+              <span id="account-followers" class="text-brand-300 font-semibold">183.5k</span> seguidores
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="hidden lg:flex items-center gap-1 bg-dark-950/60 p-1 rounded-xl border border-white/5">
+        <button onclick="switchTab('studio')" id="tab-btn-studio" class="nav-tab active px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-white bg-brand-600 shadow-sm">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i> Agendar Vídeo
+        </button>
+        <button onclick="switchTab('calendar')" id="tab-btn-calendar" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5">
+          <i data-lucide="calendar" class="w-4 h-4"></i> Calendário & Fila
+        </button>
+        <button onclick="switchTab('accounts')" id="tab-btn-accounts" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5">
+          <i data-lucide="share-2" class="w-4 h-4 text-pink-400"></i> Redes Conectadas
+        </button>
+        <button onclick="switchTab('content')" id="tab-btn-content" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5">
+          <i data-lucide="video" class="w-4 h-4"></i> Posts Publicados
+        </button>
+        <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics
+        </button>
+        <button onclick="switchTab('settings')" id="tab-btn-settings" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5">
+          <i data-lucide="settings" class="w-4 h-4"></i> API & Config
+        </button>
+      </nav>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center gap-3">
+        <!-- Status Pill -->
+        <div id="api-status-pill" class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium" title="Conexão com API SpeedPost ativa">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
+          <span class="hidden sm:inline" id="api-status-text">SpeedPost Online</span>
+          <span id="api-latency" class="text-[10px] text-emerald-500/80 font-mono hidden md:inline">24ms</span>
+        </div>
+
+        <!-- User Profile / Login Button Container -->
+        <div id="user-auth-header-container" class="flex items-center gap-2">
+          <!-- Populated by JS: Logged In Badge or Login Button -->
+          <button onclick="openAuthModal('login')" class="px-3.5 py-1.5 rounded-xl bg-dark-900 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
+            <i data-lucide="user" class="w-3.5 h-3.5"></i> Entrar
+          </button>
+        </div>
+
+        <!-- Quick Schedule Button -->
+        <button onclick="switchTab('studio')" class="hidden sm:flex px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-md shadow-brand-600/30 items-center gap-1.5 transition-all active:scale-95">
+          <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
+          <span>Novo Post</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Mobile Nav Bar -->
+    <div class="lg:hidden flex items-center justify-around border-t border-white/5 bg-dark-950 px-2 py-1.5 text-[11px]">
+      <button onclick="switchTab('studio')" id="m-tab-studio" class="flex flex-col items-center gap-1 py-1 text-brand-400 font-medium">
+        <i data-lucide="plus-circle" class="w-4 h-4"></i> Agendar
+      </button>
+      <button onclick="switchTab('calendar')" id="m-tab-calendar" class="flex flex-col items-center gap-1 py-1 text-gray-400">
+        <i data-lucide="calendar" class="w-4 h-4"></i> Calendário
+      </button>
+      <button onclick="switchTab('accounts')" id="m-tab-accounts" class="flex flex-col items-center gap-1 py-1 text-gray-400">
+        <i data-lucide="share-2" class="w-4 h-4"></i> Redes
+      </button>
+      <button onclick="switchTab('content')" id="m-tab-content" class="flex flex-col items-center gap-1 py-1 text-gray-400">
+        <i data-lucide="video" class="w-4 h-4"></i> Posts
+      </button>
+      <button onclick="switchTab('analytics')" id="m-tab-analytics" class="flex flex-col items-center gap-1 py-1 text-gray-400">
+        <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Métricas
+      </button>
+      <button onclick="switchTab('settings')" id="m-tab-settings" class="flex flex-col items-center gap-1 py-1 text-gray-400">
+        <i data-lucide="settings" class="w-4 h-4"></i> API
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: ESTÚDIO DE AGENDAMENTO DE VÍDEOS -->
+    <!-- ========================================== -->
+    <section id="section-studio" class="tab-section block">
+      <div class="mb-6">
+        <div class="flex items-center gap-2 text-brand-400 text-xs font-semibold uppercase tracking-wider mb-1">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Estúdio de Criação & Distribuição
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+          Agendar Novo Vídeo
+        </h1>
+        <p class="text-sm text-gray-400 mt-1">
+          Faça upload da sua mídia, personalize a legenda e programe a publicação automática via SpeedPost.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Left: Upload & Post Form (7 cols) -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <!-- Step 1: Video Upload -->
+          <div class="glass-panel rounded-2xl p-6 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2.5">
+                <span class="w-6 h-6 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center text-xs font-bold border border-brand-500/30">1</span>
+                <h3 class="font-bold text-sm text-white">Arquivo de Vídeo</h3>
+              </div>
+              <span class="text-xs text-gray-400 font-mono">MP4, MOV (Máx 500MB)</span>
+            </div>
+
+            <!-- Drag and drop zone -->
+            <div id="drop-zone" class="border-2 border-dashed border-white/10 hover:border-brand-500/50 rounded-xl p-6 text-center transition-all bg-dark-950/40 cursor-pointer group relative">
+              <input type="file" id="video-file-input" accept="video/mp4,video/quicktime,video/webm" class="hidden" />
+              
+              <div id="upload-idle-state" class="space-y-3">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-brand-500/10 text-brand-400 flex items-center justify-center group-hover:scale-110 transition-transform group-hover:bg-brand-500/20">
+                  <i data-lucide="upload" class="w-7 h-7"></i>
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-white">
+                    Arraste seu vídeo aqui ou <span class="text-brand-400 group-hover:underline">clique para selecionar</span>
+                  </p>
+                  <p class="text-xs text-gray-400 mt-1">Recomendado formato vertical 9:16 (1080x1920) para Reels/Shorts</p>
+                </div>
+              </div>
+
+              <!-- Uploading progress -->
+              <div id="upload-progress-state" class="hidden space-y-3 py-2">
+                <div class="flex items-center justify-between text-xs text-gray-300">
+                  <span id="upload-status-text" class="font-medium flex items-center gap-2">
+                    <i data-lucide="loader-2" class="w-4 h-4 animate-spin text-brand-400"></i> Enviando para armazenamento SpeedPost...
+                  </span>
+                  <span id="upload-percentage" class="font-mono text-brand-400 font-semibold">0%</span>
+                </div>
+                <div class="w-full bg-dark-800 rounded-full h-2 overflow-hidden">
+                  <div id="upload-bar-fill" class="bg-gradient-to-r from-brand-600 to-indigo-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Uploaded file details -->
+              <div id="upload-success-state" class="hidden flex items-center justify-between bg-dark-900/90 p-3 rounded-xl border border-brand-500/30">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-brand-500/20 flex items-center justify-center text-brand-400 shrink-0">
+                    <i data-lucide="film" class="w-5 h-5"></i>
+                  </div>
+                  <div class="text-left">
+                    <p id="uploaded-filename" class="text-xs font-semibold text-white truncate max-w-[200px] sm:max-w-xs">video.mp4</p>
+                    <p class="text-[11px] text-gray-400 flex items-center gap-2">
+                      <span id="uploaded-filesize">0 MB</span> • <span class="text-emerald-400 flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> MediaID gerado</span>
+                    </p>
+                  </div>
+                </div>
+                <button type="button" onclick="resetVideoUpload()" class="p-1.5 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-white/5 transition-colors" title="Remover vídeo">
+                  <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Quick sample video test button -->
+            <div class="mt-3 flex items-center justify-between">
+              <span class="text-[11px] text-gray-400">Sem vídeo agora?</span>
+              <button type="button" onclick="loadSampleVideo()" class="text-xs text-brand-400 hover:text-brand-300 font-medium flex items-center gap-1 transition-colors">
+                <i data-lucide="play-circle" class="w-3.5 h-3.5"></i> Usar vídeo demonstrativo
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Platform & Account -->
+          <div class="glass-panel rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2.5">
+                <span class="w-6 h-6 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center text-xs font-bold border border-brand-500/30">2</span>
+                <h3 class="font-bold text-sm text-white">Plataforma & Destino</h3>
+              </div>
+            </div>
+
+            <!-- Platform choices -->
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-5">
+              <label class="platform-card cursor-pointer border border-brand-500/50 bg-brand-500/10 rounded-xl p-3 flex flex-col items-center justify-center gap-1.5 transition-all text-center relative">
+                <input type="radio" name="post_platform" value="INSTAGRAM" checked class="hidden" />
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 flex items-center justify-center text-white shadow-sm">
+                  <i data-lucide="instagram" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-white">Instagram</span>
+                <span class="text-[9px] font-bold text-brand-300 bg-brand-500/20 px-1 rounded">Reels</span>
+              </label>
+
+              <label class="platform-card cursor-pointer border border-white/5 hover:border-white/20 bg-dark-900/50 rounded-xl p-3 flex flex-col items-center justify-center gap-1.5 transition-all text-center">
+                <input type="radio" name="post_platform" value="TIKTOK" class="hidden" />
+                <div class="w-8 h-8 rounded-lg bg-black border border-white/20 flex items-center justify-center text-white shadow-sm">
+                  <i data-lucide="music-2" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-gray-300">TikTok</span>
+              </label>
+
+              <label class="platform-card cursor-pointer border border-white/5 hover:border-white/20 bg-dark-900/50 rounded-xl p-3 flex flex-col items-center justify-center gap-1.5 transition-all text-center">
+                <input type="radio" name="post_platform" value="YOUTUBE" class="hidden" />
+                <div class="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white shadow-sm">
+                  <i data-lucide="youtube" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-gray-300">YouTube</span>
+                <span class="text-[9px] text-gray-400">Shorts</span>
+              </label>
+
+              <label class="platform-card cursor-pointer border border-white/5 hover:border-white/20 bg-dark-900/50 rounded-xl p-3 flex flex-col items-center justify-center gap-1.5 transition-all text-center">
+                <input type="radio" name="post_platform" value="FACEBOOK" class="hidden" />
+                <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm">
+                  <i data-lucide="facebook" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-gray-300">Facebook</span>
+              </label>
+
+              <label class="platform-card cursor-pointer border border-white/5 hover:border-white/20 bg-dark-900/50 rounded-xl p-3 flex flex-col items-center justify-center gap-1.5 transition-all text-center">
+                <input type="radio" name="post_platform" value="THREADS" class="hidden" />
+                <div class="w-8 h-8 rounded-lg bg-stone-800 flex items-center justify-center text-white shadow-sm">
+                  <i data-lucide="at-sign" class="w-4 h-4"></i>
+                </div>
+                <span class="text-xs font-semibold text-gray-300">Threads</span>
+              </label>
+            </div>
+
+            <!-- Workspace and Account select -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-gray-400 mb-1.5">Workspace SpeedPost</label>
+                <select id="select-workspace" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                  <option value="cmqwqwvvf2pnp9xgds8emvo9c">cenas que amo (cmqwqwvv...)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-400 mb-1.5">Conta Conectada</label>
+                <select id="select-account" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                  <option value="cmqwqytic2po99xgdlf08vnc1">@cenasqueamo._ (Instagram - Ativo)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Caption Editor -->
+          <div class="glass-panel rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2.5">
+                <span class="w-6 h-6 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center text-xs font-bold border border-brand-500/30">3</span>
+                <h3 class="font-bold text-sm text-white">Legenda do Post</h3>
+              </div>
+              <div class="text-xs text-gray-400 font-mono">
+                <span id="char-count">0</span> / 2.200 caracteres
+              </div>
+            </div>
+
+            <!-- Caption textarea -->
+            <textarea id="caption-input" rows="5" class="w-full bg-dark-950 border border-white/10 rounded-xl p-3.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 transition-colors leading-relaxed" placeholder="Escreva a legenda do seu vídeo..."></textarea>
+
+            <!-- Quick Actions: Hashtags & Emojis -->
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[11px] text-gray-400 mr-1">Hashtags:</span>
+                <button type="button" onclick="insertHashtag('#reels')" class="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[11px] text-gray-300 transition-colors">#reels</button>
+                <button type="button" onclick="insertHashtag('#cinema')" class="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[11px] text-gray-300 transition-colors">#cinema</button>
+                <button type="button" onclick="insertHashtag('#filmes')" class="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[11px] text-gray-300 transition-colors">#filmes</button>
+                <button type="button" onclick="insertHashtag('#curiosidades')" class="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[11px] text-gray-300 transition-colors">#curiosidades</button>
+                <button type="button" onclick="insertHashtag('#viral')" class="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[11px] text-gray-300 transition-colors">#viral</button>
+              </div>
+
+              <div class="flex items-center gap-1">
+                <button type="button" onclick="insertEmoji('🎬')" class="p-1 rounded hover:bg-white/10 text-sm">🎬</button>
+                <button type="button" onclick="insertEmoji('🍿')" class="p-1 rounded hover:bg-white/10 text-sm">🍿</button>
+                <button type="button" onclick="insertEmoji('💡')" class="p-1 rounded hover:bg-white/10 text-sm">💡</button>
+                <button type="button" onclick="insertEmoji('✨')" class="p-1 rounded hover:bg-white/10 text-sm">✨</button>
+                <button type="button" onclick="insertEmoji('🔥')" class="p-1 rounded hover:bg-white/10 text-sm">🔥</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: Schedule Timing -->
+          <div class="glass-panel rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2.5">
+                <span class="w-6 h-6 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center text-xs font-bold border border-brand-500/30">4</span>
+                <h3 class="font-bold text-sm text-white">Data & Horário de Publicação</h3>
+              </div>
+              <span class="text-xs text-brand-300 font-mono">Fuso: Horário de Brasília</span>
+            </div>
+
+            <!-- Presets -->
+            <div class="flex items-center gap-2 flex-wrap mb-4">
+              <span class="text-xs text-gray-400">Atalhos:</span>
+              <button type="button" onclick="setPresetTime('today-18')" class="px-2.5 py-1 rounded-lg bg-dark-900 hover:bg-white/10 text-xs font-medium text-gray-300 border border-white/5 transition-all">Hoje às 18:00</button>
+              <button type="button" onclick="setPresetTime('today-21')" class="px-2.5 py-1 rounded-lg bg-dark-900 hover:bg-white/10 text-xs font-medium text-gray-300 border border-white/5 transition-all">Hoje às 21:00</button>
+              <button type="button" onclick="setPresetTime('tomorrow-12')" class="px-2.5 py-1 rounded-lg bg-dark-900 hover:bg-white/10 text-xs font-medium text-gray-300 border border-white/5 transition-all">Amanhã às 12:00</button>
+              <button type="button" onclick="setPresetTime('tomorrow-18')" class="px-2.5 py-1 rounded-lg bg-dark-900 hover:bg-white/10 text-xs font-medium text-gray-300 border border-white/5 transition-all">Amanhã às 18:00</button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-gray-400 mb-1.5">Data</label>
+                <input type="date" id="schedule-date" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-400 mb-1.5">Horário</label>
+                <input type="time" id="schedule-time" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500" />
+              </div>
+            </div>
+
+            <div class="mt-3 p-2.5 rounded-xl bg-dark-950/60 border border-white/5 flex items-center justify-between text-xs">
+              <span class="text-gray-400">Envio para API SpeedPost (UTC):</span>
+              <span id="utc-preview" class="font-mono text-brand-300 font-medium">--</span>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div>
+            <button type="button" id="btn-submit-schedule" onclick="submitSchedulePost()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-brand-600 via-brand-500 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-base shadow-xl shadow-brand-500/25 flex items-center justify-center gap-2.5 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed">
+              <i data-lucide="calendar-check" class="w-5 h-5"></i>
+              <span id="btn-schedule-text">Confirmar e Agendar Vídeo</span>
+            </button>
+            <p class="text-[11px] text-gray-400 text-center mt-2">
+              O vídeo será enviado e programado diretamente na fila de disparo oficial do SpeedPost.
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Right: Mobile Instagram Reel Live Preview (5 cols) -->
+        <div class="lg:col-span-5 flex flex-col items-center">
+          <div class="sticky top-24">
+            
+            <div class="flex items-center gap-2 mb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <i data-lucide="smartphone" class="w-4 h-4 text-brand-400"></i> Pré-visualização do Reel
+            </div>
+
+            <!-- Phone Frame -->
+            <div class="phone-mockup">
+              <!-- Dynamic Island -->
+              <div class="phone-island"></div>
+
+              <!-- Top Status Bar -->
+              <div class="absolute top-2 inset-x-0 px-6 flex items-center justify-between text-[11px] font-semibold text-white z-30">
+                <span id="phone-clock">18:00</span>
+                <div class="flex items-center gap-1.5 text-xs">
+                  <i data-lucide="wifi" class="w-3 h-3"></i>
+                  <i data-lucide="battery" class="w-3.5 h-3.5"></i>
+                </div>
+              </div>
+
+              <!-- Top Tag with Scheduled Time -->
+              <div class="absolute top-10 inset-x-4 z-30">
+                <div class="bg-black/60 backdrop-blur-md rounded-full px-3 py-1 flex items-center justify-center gap-1.5 text-[10px] text-brand-300 border border-white/10">
+                  <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                  <span id="mockup-sched-tag">Programado para ...</span>
+                </div>
+              </div>
+
+              <!-- Video Container / Player -->
+              <div class="absolute inset-0 bg-dark-900 flex items-center justify-center overflow-hidden">
+                <video id="preview-video" class="w-full h-full object-cover" loop playsinline muted></video>
+                
+                <div id="preview-video-placeholder" class="text-center p-6 space-y-3">
+                  <div class="w-16 h-16 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center mx-auto">
+                    <i data-lucide="play" class="w-8 h-8 ml-1"></i>
+                  </div>
+                  <p class="text-xs text-gray-400">Faça o upload do vídeo ao lado para ver o preview interativo</p>
+                </div>
+
+                <!-- Overlay Gradient -->
+                <div class="absolute inset-0 reel-overlay pointer-events-none"></div>
+              </div>
+
+              <!-- Right Side Actions (Instagram Reel Style) -->
+              <div class="absolute right-3 bottom-24 z-30 flex flex-col items-center gap-5 text-white">
+                <div class="flex flex-col items-center gap-1">
+                  <button class="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:text-red-500 transition-colors">
+                    <i data-lucide="heart" class="w-5 h-5"></i>
+                  </button>
+                  <span class="text-[10px] font-bold">14.8k</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-1">
+                  <button class="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                    <i data-lucide="message-circle" class="w-5 h-5"></i>
+                  </button>
+                  <span class="text-[10px] font-bold">342</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-1">
+                  <button class="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                    <i data-lucide="send" class="w-5 h-5"></i>
+                  </button>
+                  <span class="text-[10px] font-bold">89</span>
+                </div>
+
+                <div class="flex flex-col items-center gap-1">
+                  <button class="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                    <i data-lucide="bookmark" class="w-5 h-5"></i>
+                  </button>
+                </div>
+
+                <div class="w-7 h-7 rounded-lg bg-white/20 border border-white/40 flex items-center justify-center animate-spin">
+                  <i data-lucide="disc" class="w-4 h-4 text-white"></i>
+                </div>
+              </div>
+
+              <!-- Bottom Content (Account & Caption) -->
+              <div class="absolute bottom-5 inset-x-4 z-30 text-white space-y-2 pointer-events-none">
+                <!-- Profile -->
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 p-0.5">
+                    <div class="w-full h-full rounded-full bg-dark-900 flex items-center justify-center text-[10px] font-bold">
+                      C
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold">cenasqueamo._</span>
+                    <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-semibold">Seguir</span>
+                  </div>
+                </div>
+
+                <!-- Dynamic Caption -->
+                <div class="text-[11px] text-gray-200 line-clamp-3 leading-relaxed">
+                  <span id="preview-caption-text">Escreva a legenda no formulário ao lado para acompanhar em tempo real...</span>
+                </div>
+
+                <!-- Audio tag -->
+                <div class="flex items-center gap-1.5 text-[10px] text-gray-300">
+                  <i data-lucide="music" class="w-3 h-3"></i>
+                  <span class="truncate">Áudio original — cenasqueamo._</span>
+                </div>
+              </div>
+
+            </div>
+
+            <p class="text-xs text-gray-500 text-center mt-3">
+              Simulador fiel do layout nativo do Instagram Reels.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 2: CALENDÁRIO & FILA DE AGENDAMENTOS -->
+    <!-- ========================================== -->
+    <section id="section-calendar" class="tab-section hidden">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <div class="flex items-center gap-2 text-brand-400 text-xs font-semibold uppercase tracking-wider mb-1">
+            <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Fila de Disparo SpeedPost
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            Calendário & Publicações Agendadas
+          </h1>
+          <p class="text-sm text-gray-400 mt-1">
+            Acompanhe os posts programados para publicação automática e gerencie o histórico.
+          </p>
+        </div>
+
+        <!-- View Switcher & Actions -->
+        <div class="flex items-center gap-3">
+          <div class="flex items-center bg-dark-900 p-1 rounded-xl border border-white/5">
+            <button onclick="setCalendarView('list')" id="view-btn-list" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-brand-600 text-white transition-all flex items-center gap-1.5">
+              <i data-lucide="list" class="w-3.5 h-3.5"></i> Fila
+            </button>
+            <button onclick="setCalendarView('month')" id="view-btn-month" class="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all flex items-center gap-1.5">
+              <i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> Mês
+            </button>
+          </div>
+
+          <button onclick="loadCalendarPosts()" class="p-2 rounded-xl bg-dark-900 hover:bg-white/10 border border-white/10 text-gray-300 transition-colors" title="Atualizar dados da API">
+            <i data-lucide="refresh-cw" class="w-4 h-4" id="calendar-refresh-icon"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters Bar -->
+      <div class="glass-panel rounded-2xl p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs text-gray-400 mr-1">Filtrar por Status:</span>
+          <button onclick="filterCalendar('all')" class="cal-filter-btn active px-3 py-1 rounded-lg text-xs font-medium bg-brand-500/20 text-brand-300 border border-brand-500/30">Todos (<span id="count-all">0</span>)</button>
+          <button onclick="filterCalendar('scheduled')" class="cal-filter-btn px-3 py-1 rounded-lg text-xs font-medium bg-dark-900 text-gray-300 hover:bg-white/5 border border-white/5">Agendados (<span id="count-scheduled">0</span>)</button>
+          <button onclick="filterCalendar('published')" class="cal-filter-btn px-3 py-1 rounded-lg text-xs font-medium bg-dark-900 text-gray-300 hover:bg-white/5 border border-white/5">Publicados (<span id="count-published">0</span>)</button>
+          <button onclick="filterCalendar('cancelled')" class="cal-filter-btn px-3 py-1 rounded-lg text-xs font-medium bg-dark-900 text-gray-300 hover:bg-white/5 border border-white/5">Cancelados (<span id="count-cancelled">0</span>)</button>
+        </div>
+
+        <div class="relative w-full sm:w-64">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <input type="text" id="calendar-search" placeholder="Buscar por legenda..." oninput="searchCalendar(this.value)" class="w-full bg-dark-950 border border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500" />
+        </div>
+      </div>
+
+      <!-- Month Calendar View -->
+      <div id="calendar-view-month" class="hidden glass-panel rounded-2xl p-6 mb-8">
+        <div class="flex items-center justify-between mb-6">
+          <h3 id="month-title" class="text-base font-bold text-white">Outubro 2026</h3>
+          <div class="flex items-center gap-2">
+            <button onclick="prevMonth()" class="p-1.5 rounded-lg bg-dark-900 hover:bg-white/10 text-gray-300 border border-white/5">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button onclick="goToCurrentMonth()" class="px-2.5 py-1 rounded-lg bg-dark-900 hover:bg-white/10 text-xs font-medium text-gray-300 border border-white/5">Hoje</button>
+            <button onclick="nextMonth()" class="p-1.5 rounded-lg bg-dark-900 hover:bg-white/10 text-gray-300 border border-white/5">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-semibold text-gray-400">
+          <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+        </div>
+        <div id="calendar-grid" class="grid grid-cols-7 gap-2">
+          <!-- Calendar days rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Queue List View -->
+      <div id="calendar-view-list" class="space-y-4">
+        <div id="calendar-posts-list" class="space-y-3">
+          <!-- Posts rendered dynamically -->
+          <div class="text-center py-16 text-gray-400">
+            <i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto text-brand-400 mb-2"></i>
+            <p class="text-sm">Carregando calendário da API SpeedPost...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 3: POSTS PUBLICADOS & MÉTRICAS -->
+    <!-- ========================================== -->
+    <section id="section-content" class="tab-section hidden">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <div class="flex items-center gap-2 text-brand-400 text-xs font-semibold uppercase tracking-wider mb-1">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Desempenho Real no Instagram
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            Posts Publicados & Métricas
+          </h1>
+          <p class="text-sm text-gray-400 mt-1">
+            Métricas oficiais sincronizadas da Meta/SpeedPost para a conta <span class="text-brand-300 font-semibold">@cenasqueamo._</span>
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button onclick="loadPublishedContent()" class="px-3.5 py-2 rounded-xl bg-dark-900 hover:bg-white/10 border border-white/10 text-gray-200 text-xs font-medium flex items-center gap-2 transition-colors">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="content-refresh-icon"></i>
+            <span>Atualizar Métricas</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Content Grid -->
+      <div id="published-content-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rendered dynamically -->
+        <div class="col-span-full text-center py-16 text-gray-400">
+          <i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto text-brand-400 mb-2"></i>
+          <p class="text-sm">Carregando métricas dos posts publicados...</p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 4: ANALYTICS & CRESCIMENTO -->
+    <!-- ========================================== -->
+    <section id="section-analytics" class="tab-section hidden">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <div class="flex items-center gap-2 text-brand-400 text-xs font-semibold uppercase tracking-wider mb-1">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Visão Geral de Performance
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            Analytics da Conta
+          </h1>
+          <p class="text-sm text-gray-400 mt-1">
+            Métricas acumuladas e evolução temporal de visualizações, alcance e novos seguidores.
+          </p>
+        </div>
+
+        <!-- Period selector -->
+        <div class="flex items-center bg-dark-900 p-1 rounded-xl border border-white/5">
+          <button onclick="changeAnalyticsPeriod('7d')" id="period-btn-7d" class="px-3 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all">7 Dias</button>
+          <button onclick="changeAnalyticsPeriod('30d')" id="period-btn-30d" class="px-3 py-1 rounded-lg text-xs font-medium bg-brand-600 text-white transition-all">30 Dias</button>
+          <button onclick="changeAnalyticsPeriod('90d')" id="period-btn-90d" class="px-3 py-1 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all">90 Dias</button>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        
+        <!-- Followers -->
+        <div class="glass-panel rounded-2xl p-5 border-l-4 border-l-brand-500">
+          <div class="flex items-center justify-between text-gray-400 text-xs mb-2">
+            <span>Seguidores Atuais</span>
+            <div class="w-8 h-8 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center">
+              <i data-lucide="users" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-black text-white" id="stat-followers">183.503</div>
+          <div class="text-xs text-emerald-400 flex items-center gap-1 mt-1">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+            <span id="stat-followers-growth">+342 no período</span>
+          </div>
+        </div>
+
+        <!-- Views -->
+        <div class="glass-panel rounded-2xl p-5 border-l-4 border-l-blue-500">
+          <div class="flex items-center justify-between text-gray-400 text-xs mb-2">
+            <span>Visualizações Totais</span>
+            <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-black text-white" id="stat-views">98.400</div>
+          <div class="text-xs text-gray-400 mt-1">Acumulado no período</div>
+        </div>
+
+        <!-- Reach -->
+        <div class="glass-panel rounded-2xl p-5 border-l-4 border-l-purple-500">
+          <div class="flex items-center justify-between text-gray-400 text-xs mb-2">
+            <span>Alcance Único</span>
+            <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+              <i data-lucide="radar" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-black text-white" id="stat-reach">72.000</div>
+          <div class="text-xs text-gray-400 mt-1">Contas alcançadas</div>
+        </div>
+
+        <!-- Engagement -->
+        <div class="glass-panel rounded-2xl p-5 border-l-4 border-l-pink-500">
+          <div class="flex items-center justify-between text-gray-400 text-xs mb-2">
+            <span>Interações / Curtidas</span>
+            <div class="w-8 h-8 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center">
+              <i data-lucide="heart" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-black text-white" id="stat-likes">4.821</div>
+          <div class="text-xs text-gray-400 mt-1">Curtidas registradas</div>
+        </div>
+
+      </div>
+
+      <!-- Chart Section -->
+      <div class="glass-panel rounded-2xl p-6 mb-8">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h3 class="font-bold text-base text-white">Evolução Diária (Views x Alcance)</h3>
+            <p class="text-xs text-gray-400">Série temporal fornecida pela SpeedPost Analytics</p>
+          </div>
+        </div>
+        <div class="h-72 w-full relative">
+          <canvas id="analytics-chart"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 5: CONFIGURAÇÃO DA API & SPEEDPOST -->
+    <!-- ========================================== -->
+    <section id="section-settings" class="tab-section hidden">
+      <div class="mb-6">
+        <div class="flex items-center gap-2 text-brand-400 text-xs font-semibold uppercase tracking-wider mb-1">
+          <i data-lucide="key" class="w-3.5 h-3.5"></i> Credenciais & Conexão
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+          Configuração da API SpeedPost
+        </h1>
+        <p class="text-sm text-gray-400 mt-1">
+          Gerencie a chave da API, teste a latência de rede e consulte os limites oficiais da plataforma.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- API Key Manager (7 cols) -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <div class="glass-panel rounded-2xl p-6 space-y-5">
+            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> Chave de API Ativa
+            </h3>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-2">SpeedPost API Key (spk_...)</label>
+              <div class="flex items-center gap-2">
+                <div class="relative flex-1">
+                  <input type="password" id="api-key-input" value="spk_zY8ug6teWCEUJ1ogKV3SNi4N_ebIYLFP" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-brand-500" />
+                  <button type="button" onclick="toggleApiKeyVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+                    <i data-lucide="eye" class="w-4 h-4" id="eye-icon"></i>
+                  </button>
+                </div>
+                <button type="button" onclick="saveApiKey()" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-md transition-all">
+                  Salvar
+                </button>
+              </div>
+            </div>
+
+            <!-- Test Connection Button -->
+            <div class="pt-2 flex items-center justify-between border-t border-white/5">
+              <div>
+                <p class="text-xs font-medium text-white">Testar Conexão em Tempo Real</p>
+                <p class="text-[11px] text-gray-400">Envia ping com a chave para <code class="text-brand-300">/workspaces</code></p>
+              </div>
+              <button type="button" onclick="testApiConnection()" id="btn-test-api" class="px-3.5 py-2 rounded-xl bg-dark-900 hover:bg-white/10 border border-white/10 text-xs font-medium text-gray-200 flex items-center gap-2 transition-all">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> Testar Agora
+              </button>
+            </div>
+
+            <div id="test-connection-result" class="hidden p-3.5 rounded-xl bg-dark-950 border text-xs">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Connected Workspaces -->
+          <div class="glass-panel rounded-2xl p-6">
+            <h3 class="font-bold text-sm text-white mb-4 flex items-center gap-2">
+              <i data-lucide="layers" class="w-4 h-4 text-brand-400"></i> Workspaces & Contas Autorizadas
+            </h3>
+            <div id="workspaces-list-card" class="space-y-3">
+              <div class="p-3.5 rounded-xl bg-dark-950 border border-white/5 flex items-center justify-between">
+                <div>
+                  <p class="text-xs font-bold text-white">cenas que amo</p>
+                  <p class="text-[11px] text-gray-400 font-mono">ID: cmqwqwvvf2pnp9xgds8emvo9c</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold">ATIVO</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Documentation & Rate Limits (5 cols) -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="glass-panel rounded-2xl p-6 space-y-4">
+            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+              <i data-lucide="info" class="w-4 h-4 text-blue-400"></i> Limites de Requisições da API
+            </h3>
+
+            <div class="space-y-3 text-xs text-gray-300">
+              <div class="p-3 rounded-xl bg-dark-950/80 border border-white/5">
+                <p class="font-semibold text-white flex items-center justify-between">
+                  <span>Limite Padrão por Rota</span>
+                  <span class="text-brand-300 font-mono font-bold">4.000 req/h</span>
+                </p>
+                <p class="text-[11px] text-gray-400 mt-1">Para endpoints como upload de mídia e agendamento de posts.</p>
+              </div>
+
+              <div class="p-3 rounded-xl bg-dark-950/80 border border-white/5">
+                <p class="font-semibold text-white flex items-center justify-between">
+                  <span>Limite Geral da Conta</span>
+                  <span class="text-emerald-300 font-mono font-bold">100.000 req/h</span>
+                </p>
+                <p class="text-[11px] text-gray-400 mt-1">Teto total de chamadas distribuídas no seu workspace.</p>
+              </div>
+
+              <div class="p-3 rounded-xl bg-dark-950/80 border border-white/5">
+                <p class="font-semibold text-white flex items-center justify-between">
+                  <span>Tamanho Máximo de Mídia</span>
+                  <span class="text-purple-300 font-mono font-bold">500 MB</span>
+                </p>
+                <p class="text-[11px] text-gray-400 mt-1">Formatos aceitos: MP4, MOV, WEBM, JPG, PNG.</p>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-white/5 flex items-center justify-between">
+              <a href="https://speedpost.com.br/api-docs" target="_blank" rel="noopener noreferrer" class="text-xs text-brand-400 hover:text-brand-300 flex items-center gap-1.5 font-medium">
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir Documentação Oficial
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB: REDES CONECTADAS (META OAUTH DIRETO) -->
+    <!-- ========================================== -->
+    <section id="section-accounts" class="tab-section hidden">
+      <div class="mb-6">
+        <div class="flex items-center gap-2 text-pink-400 text-xs font-semibold uppercase tracking-wider mb-1">
+          <i data-lucide="share-2" class="w-3.5 h-3.5"></i> Abordagem 1 — Meta & Instagram OAuth
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+          Minhas Redes Sociais Conectadas
+        </h1>
+        <p class="text-sm text-gray-400 mt-1">
+          Conecte suas contas do Instagram e Facebook para agendar e publicar vídeos automaticamente.
+        </p>
+      </div>
+
+      <!-- Main Connection Banner -->
+      <div class="glass-panel rounded-3xl p-6 sm:p-8 relative overflow-hidden mb-8 border border-brand-500/30 glow-border">
+        <div class="absolute -right-10 -bottom-10 w-64 h-64 rounded-full bg-gradient-to-tr from-pink-500/10 via-purple-500/10 to-blue-500/10 blur-3xl pointer-events-none"></div>
+
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div class="space-y-3 max-w-xl">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg">
+                <i data-lucide="instagram" class="w-5 h-5"></i>
+              </div>
+              <div class="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg">
+                <i data-lucide="facebook" class="w-5 h-5"></i>
+              </div>
+              <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/10 text-white border border-white/20">Meta Graph API</span>
+            </div>
+
+            <h2 class="text-xl sm:text-2xl font-bold text-white leading-tight">
+              Conecte seu Instagram com 1 Clique
+            </h2>
+            <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
+              O fluxo oficial da Meta (Abordagem 1) abre a janela de login da Meta para autorizar publicações no Instagram Business / Creator sem expor senhas.
+            </p>
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <button type="button" onclick="initiateMetaOAuth()" class="px-5 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-xs shadow-xl shadow-blue-600/25 flex items-center justify-center gap-2.5 transition-all active:scale-95">
+              <i data-lucide="link-2" class="w-4 h-4"></i>
+              <span>Conectar via Meta OAuth</span>
+            </button>
+
+            <button type="button" onclick="openMockConnectModal()" class="px-4 py-3.5 rounded-2xl bg-dark-900 hover:bg-white/10 border border-white/10 text-gray-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all">
+              <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+              <span>Simular Conexão (Sandbox)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connected Accounts Grid -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-sm text-white flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> Contas Ativas no seu Usuário (<span id="user-accounts-count">0</span>)
+          </h3>
+          <button onclick="loadUserConnectedAccounts()" class="text-xs text-brand-400 hover:text-brand-300 flex items-center gap-1 font-medium">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Atualizar
+          </button>
+        </div>
+
+        <div id="user-connected-accounts-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Meta Configuration Guide Card -->
+      <div class="glass-panel rounded-2xl p-6 border border-white/10 space-y-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+            <i data-lucide="info" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm text-white">Chaves necessárias para o Meta OAuth Oficial</h4>
+            <p class="text-xs text-gray-400">Quando você for registrar o app em produção no Meta for Developers</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          <div class="p-4 rounded-xl bg-dark-950 border border-white/5 space-y-1.5">
+            <span class="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Chave 1</span>
+            <p class="font-mono text-xs text-white font-semibold">META_APP_ID</p>
+            <p class="text-[11px] text-gray-400">ID numérico do aplicativo criado no Facebook Developers.</p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-dark-950 border border-white/5 space-y-1.5">
+            <span class="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Chave 2</span>
+            <p class="font-mono text-xs text-white font-semibold">META_APP_SECRET</p>
+            <p class="text-[11px] text-gray-400">Chave secreta do aplicativo gerada no painel da Meta.</p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-dark-950 border border-white/5 space-y-1.5">
+            <span class="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Chave 3</span>
+            <p class="font-mono text-xs text-white font-semibold">META_REDIRECT_URI</p>
+            <p class="text-[11px] text-gray-400 font-mono break-all text-brand-300">https://.../api/auth/meta/callback</p>
+          </div>
+        </div>
+
+        <div class="pt-2 text-xs text-gray-400 leading-relaxed border-t border-white/5">
+          💡 <strong>Permissões necessárias para aprovação na Meta:</strong> <code class="text-gray-300">instagram_content_publish</code>, <code class="text-gray-300">instagram_basic</code>, <code class="text-gray-300">pages_show_list</code> e <code class="text-gray-300">pages_read_engagement</code>.
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- MODAL: POST DETAILS & VIDEO PLAYER -->
+  <div id="modal-post-detail" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-dark-900 border border-white/10 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
+      <div class="p-4 border-b border-white/10 flex items-center justify-between">
+        <h3 class="font-bold text-sm text-white flex items-center gap-2">
+          <i data-lucide="film" class="w-4 h-4 text-brand-400"></i> Detalhes da Publicação
+        </h3>
+        <button onclick="closePostDetailModal()" class="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div id="modal-video-container" class="w-full h-64 bg-black rounded-xl overflow-hidden flex items-center justify-center">
+          <video id="modal-video-player" controls class="w-full h-full object-contain"></video>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-gray-400">Status:</span>
+            <span id="modal-post-status" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold">--</span>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-gray-400">Data / Horário:</span>
+            <span id="modal-post-date" class="font-mono text-white">--</span>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-gray-400">ID SpeedPost:</span>
+            <span id="modal-post-id" class="font-mono text-brand-300 select-all">--</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1">Legenda:</label>
+          <div id="modal-post-caption" class="p-3 rounded-xl bg-dark-950 border border-white/5 text-xs text-gray-200 max-h-36 overflow-y-auto leading-relaxed">--</div>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-white/10 flex items-center justify-end gap-3 bg-dark-950">
+        <button onclick="closePostDetailModal()" class="px-4 py-2 rounded-xl bg-dark-900 hover:bg-white/10 text-xs font-semibold text-gray-300">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: AUTENTICAÇÃO (LOGIN & CADASTRO) -->
+  <div id="modal-auth" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-dark-900 border border-white/10 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl relative">
+      
+      <!-- Modal Header -->
+      <div class="p-6 pb-4 border-b border-white/5 flex items-center justify-between">
+        <div>
+          <h3 id="auth-modal-title" class="font-bold text-base text-white">Acessar sua Conta</h3>
+          <p class="text-xs text-gray-400 mt-0.5">Gerencie suas redes sociais e agendamentos</p>
+        </div>
+        <button onclick="closeAuthModal()" class="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Auth Tabs: Login vs Register -->
+      <div class="px-6 pt-4">
+        <div class="grid grid-cols-2 p-1 bg-dark-950 rounded-xl border border-white/5 text-xs font-semibold">
+          <button type="button" id="auth-tab-login" onclick="setAuthMode('login')" class="py-2 rounded-lg bg-brand-600 text-white shadow-sm transition-all">
+            Entrar
+          </button>
+          <button type="button" id="auth-tab-register" onclick="setAuthMode('register')" class="py-2 rounded-lg text-gray-400 hover:text-white transition-all">
+            Criar Conta
+          </button>
+        </div>
+      </div>
+
+      <!-- Form Body -->
+      <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="p-6 space-y-4">
+        <div id="auth-name-container" class="hidden space-y-1.5">
+          <label class="block text-xs font-medium text-gray-400">Nome Completo</label>
+          <input type="text" id="auth-name" placeholder="Seu Nome ou Agência" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 transition-colors" />
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block text-xs font-medium text-gray-400">Email</label>
+          <input type="email" id="auth-email" required placeholder="seu@email.com" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 transition-colors" />
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block text-xs font-medium text-gray-400">Senha</label>
+          <input type="password" id="auth-password" required placeholder="Mínimo 6 caracteres" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 transition-colors" />
+        </div>
+
+        <div id="auth-error-msg" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs"></div>
+
+        <button type="submit" id="auth-submit-btn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 transition-all active:scale-[0.99]">
+          <span id="auth-submit-text">Entrar no Studio</span>
+        </button>
+
+        <p class="text-[11px] text-gray-500 text-center">
+          Conta de demonstração padrão: <span class="text-brand-300 font-mono">admin@speedpost.com</span> / <span class="text-brand-300 font-mono">admin123</span>
+        </p>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- MODAL: MOCK CONNECT (SANDBOX INSTAGRAM ACCOUNT) -->
+  <div id="modal-mock-connect" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-dark-900 border border-white/10 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl relative">
+      
+      <div class="p-6 pb-4 border-b border-white/5 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center text-white">
+            <i data-lucide="instagram" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-white">Conectar Perfil (Sandbox)</h3>
+            <p class="text-xs text-gray-400">Simulação do retorno da Meta OAuth</p>
+          </div>
+        </div>
+        <button onclick="closeMockConnectModal()" class="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleMockConnectSubmit(event)" class="p-6 space-y-4">
+        <div class="space-y-1.5">
+          <label class="block text-xs font-medium text-gray-400">Usuário do Instagram</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-mono">@</span>
+            <input type="text" id="mock-username" required placeholder="meu_perfil_oficial" class="w-full bg-dark-950 border border-white/10 rounded-xl pl-8 pr-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 transition-colors" />
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block text-xs font-medium text-gray-400">Nome de Exibição</label>
+          <input type="text" id="mock-name" placeholder="Ex: Canal Dark / Loja Virtual" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 transition-colors" />
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block text-xs font-medium text-gray-400">Quantidade de Seguidores</label>
+          <input type="number" id="mock-followers" placeholder="15000" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 transition-colors" />
+        </div>
+
+        <button type="submit" id="btn-mock-connect-submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:opacity-95 text-white font-bold text-xs shadow-lg shadow-purple-600/25 flex items-center justify-center gap-2 transition-all active:scale-[0.99]">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          <span>Vincular Conta ao meu Usuário</span>
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- SCRIPT -->
+  <script src="app.js"></script>
+</body>
+</html>
