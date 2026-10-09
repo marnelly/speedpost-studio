@@ -56,7 +56,7 @@
       
       <!-- Brand & Workspace -->
       <div class="flex items-center gap-4">
-        <div class="flex items-center gap-3">
+        <div onclick="handleLogoClick()" class="flex items-center gap-3 cursor-pointer group" title="Ir para o início">
           <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 via-brand-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-brand-500/25">
             <i data-lucide="zap" class="w-5 h-5 text-white"></i>
           </div>
@@ -85,8 +85,8 @@
         </div>
       </div>
 
-      <!-- Navigation Tabs -->
-      <nav class="hidden lg:flex items-center gap-1 bg-dark-950/60 p-1 rounded-xl border border-white/5">
+      <!-- Navigation Tabs: Logged In App (Hidden when guest) -->
+      <nav id="app-nav-tabs" class="hidden items-center gap-1 bg-dark-950/60 p-1 rounded-xl border border-white/5">
         <button onclick="switchTab('studio')" id="tab-btn-studio" class="nav-tab active px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-white bg-brand-600 shadow-sm">
           <i data-lucide="plus-circle" class="w-4 h-4"></i> Agendar Vídeo
         </button>
@@ -105,6 +105,22 @@
         <button onclick="switchTab('settings')" id="tab-btn-settings" class="nav-tab hidden px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5">
           <i data-lucide="settings" class="w-4 h-4"></i> API & Config
         </button>
+      </nav>
+
+      <!-- Navigation Links: Public Landing (Visible when guest) -->
+      <nav id="guest-nav-links" class="hidden lg:flex items-center gap-6 text-xs font-medium text-gray-300">
+        <a href="#features" class="hover:text-white transition-colors flex items-center gap-1.5">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-400"></i> Recursos
+        </a>
+        <a href="#how-it-works" class="hover:text-white transition-colors flex items-center gap-1.5">
+          <i data-lucide="workflow" class="w-3.5 h-3.5 text-blue-400"></i> Como Funciona
+        </a>
+        <a href="#meta-security" class="hover:text-white transition-colors flex items-center gap-1.5">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> Segurança Meta
+        </a>
+        <a href="#pricing" class="hover:text-white transition-colors flex items-center gap-1.5">
+          <i data-lucide="tag" class="w-3.5 h-3.5 text-purple-400"></i> Planos
+        </a>
       </nav>
 
       <!-- Right Header Actions -->
@@ -127,7 +143,7 @@
         </div>
 
         <!-- Quick Schedule Button -->
-        <button onclick="switchTab('studio')" class="hidden sm:flex px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-md shadow-brand-600/30 items-center gap-1.5 transition-all active:scale-95">
+        <button id="header-quick-action-btn" onclick="handleQuickActionBtn()" class="hidden sm:flex px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-md shadow-brand-600/30 items-center gap-1.5 transition-all active:scale-95">
           <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
           <span>Novo Post</span>
         </button>
@@ -135,8 +151,8 @@
 
     </div>
 
-    <!-- Mobile Nav Bar -->
-    <div class="lg:hidden flex items-center justify-around border-t border-white/5 bg-dark-950 px-2 py-1.5 text-[11px]">
+    <!-- Mobile Nav Bar for App (Logged in) -->
+    <div id="mobile-nav-app" class="hidden items-center justify-around border-t border-white/5 bg-dark-950 px-2 py-1.5 text-[11px]">
       <button onclick="switchTab('studio')" id="m-tab-studio" class="flex flex-col items-center gap-1 py-1 text-brand-400 font-medium">
         <i data-lucide="plus-circle" class="w-4 h-4"></i> Agendar
       </button>
@@ -152,8 +168,21 @@
       <button onclick="switchTab('analytics')" id="m-tab-analytics" class="flex flex-col items-center gap-1 py-1 text-gray-400">
         <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Métricas
       </button>
-      <button onclick="switchTab('settings')" id="m-tab-settings" class="flex flex-col items-center gap-1 py-1 text-gray-400">
-        <i data-lucide="settings" class="w-4 h-4"></i> API
+    </div>
+
+    <!-- Mobile Nav Bar for Guest (Visitor) -->
+    <div id="mobile-nav-guest" class="lg:hidden flex items-center justify-around border-t border-white/5 bg-dark-950 px-3 py-2 text-xs">
+      <a href="#features" class="flex items-center gap-1 text-gray-400 hover:text-white">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-400"></i> Recursos
+      </a>
+      <a href="#how-it-works" class="flex items-center gap-1 text-gray-400 hover:text-white">
+        <i data-lucide="workflow" class="w-3.5 h-3.5 text-blue-400"></i> Como Funciona
+      </a>
+      <button onclick="openAuthModal('login')" class="text-gray-300 font-semibold hover:text-white">
+        Entrar
+      </button>
+      <button onclick="openAuthModal('register')" class="px-3 py-1 rounded-lg bg-brand-600 text-white font-bold text-xs">
+        Cadastrar
       </button>
     </div>
   </header>
@@ -164,7 +193,451 @@
     <!-- ========================================== -->
     <!-- TAB 1: ESTÚDIO DE AGENDAMENTO DE VÍDEOS -->
     <!-- ========================================== -->
-    <section id="section-studio" class="tab-section block">
+    
+    <!-- ========================================== -->
+    <!-- TAB 0: LANDING PAGE PÚBLICA (VISITANTES)   -->
+    <!-- ========================================== -->
+    <section id="section-landing" class="tab-section block">
+      
+      <!-- HERO SECTION -->
+      <div class="relative py-12 md:py-20 overflow-hidden">
+        
+        <!-- Ambient background glows -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-brand-600/20 via-indigo-600/15 to-pink-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+        <div class="absolute -top-10 right-10 w-72 h-72 bg-blue-500/10 rounded-full blur-2xl pointer-events-none -z-10"></div>
+
+        <div class="max-w-4xl mx-auto text-center space-y-6">
+          
+          <!-- Badge Pill -->
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-300 text-xs font-semibold shadow-lg shadow-brand-500/10 animate-pulse">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-400"></i>
+            <span>Nova Geração de Automação para Criadores & Agências</span>
+          </div>
+
+          <!-- Main Title -->
+          <h1 class="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-white leading-[1.1]">
+            Agende seus Vídeos e Reels no <span class="gradient-text">Piloto Automático</span>
+          </h1>
+
+          <!-- Subtitle -->
+          <p class="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+            A plataforma profissional integrada à <strong>API Oficial da Meta</strong>. Programe semanas de conteúdo em minutos, com simulador nativo de Reels e zero risco de bloqueio.
+          </p>
+
+          <!-- Action Buttons -->
+          <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button onclick="openAuthModal('register')" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600 hover:from-brand-500 hover:to-purple-500 text-white font-extrabold text-sm sm:text-base shadow-xl shadow-brand-600/30 flex items-center justify-center gap-3 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+              <i data-lucide="zap" class="w-5 h-5 text-amber-300"></i>
+              <span>Começar Gratuitamente</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+
+            <button onclick="openAuthModal('login')" class="w-full sm:w-auto px-7 py-4 rounded-2xl bg-dark-900/90 hover:bg-white/10 border border-white/15 text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all">
+              <i data-lucide="log-in" class="w-4 h-4 text-gray-300"></i>
+              <span>Já Tenho Conta (Entrar)</span>
+            </button>
+          </div>
+
+          <!-- Proof Badges -->
+          <div class="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto text-left">
+            <div class="p-3 rounded-xl bg-dark-900/60 border border-white/5 flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs text-gray-300 font-medium leading-tight">API Oficial da Meta</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-dark-900/60 border border-white/5 flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs text-gray-300 font-medium leading-tight">Sem Expor Senhas</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-dark-900/60 border border-white/5 flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0">
+                <i data-lucide="smartphone" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs text-gray-300 font-medium leading-tight">Simulador Nativo</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-dark-900/60 border border-white/5 flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center shrink-0">
+                <i data-lucide="zap" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs text-gray-300 font-medium leading-tight">Vídeos em Alta Definição</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- PRODUCT SHOWCASE / PREVIEW BANNER -->
+      <div class="py-8">
+        <div class="glass-panel rounded-3xl p-6 sm:p-10 border border-brand-500/30 glow-border relative overflow-hidden bg-gradient-to-b from-dark-900/90 to-dark-950">
+          
+          <div class="max-w-3xl mb-8">
+            <span class="text-xs font-bold text-brand-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+              <i data-lucide="layers" class="w-3.5 h-3.5"></i> Visão Completa da Plataforma
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white">
+              Tudo o que você precisa em uma única tela
+            </h2>
+            <p class="text-sm text-gray-300 mt-2">
+              Diga adeus à complicação de postar manualmente no celular todo dia. Centralize seus agendamentos, visualize o resultado final e acompanhe o crescimento.
+            </p>
+          </div>
+
+          <!-- Interactive preview columns -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+            
+            <!-- Feature 1 -->
+            <div class="space-y-4">
+              <div class="p-5 rounded-2xl bg-dark-950/80 border border-white/10 hover:border-brand-500/40 transition-all">
+                <div class="w-9 h-9 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center mb-3">
+                  <i data-lucide="instagram" class="w-5 h-5"></i>
+                </div>
+                <h3 class="text-sm font-bold text-white">Conexão Oficial Meta OAuth</h3>
+                <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+                  Autorize seu Instagram Business ou Creator diretamente pela janela de login da Meta. Suas credenciais permanecem protegidas.
+                </p>
+              </div>
+
+              <div class="p-5 rounded-2xl bg-dark-950/80 border border-white/10 hover:border-brand-500/40 transition-all">
+                <div class="w-9 h-9 rounded-xl bg-brand-500/20 text-brand-400 flex items-center justify-center mb-3">
+                  <i data-lucide="calendar" class="w-5 h-5"></i>
+                </div>
+                <h3 class="text-sm font-bold text-white">Calendário & Fila Visual</h3>
+                <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+                  Programe posts para horários estratégicos de pico. Visualize seu mês completo em lista ou grade mensal interativa.
+                </p>
+              </div>
+            </div>
+
+            <!-- Central Mockup Graphic -->
+            <div class="flex flex-col items-center justify-center py-4">
+              <div class="relative w-64 h-96 rounded-3xl bg-black border-4 border-dark-800 shadow-2xl overflow-hidden flex flex-col justify-between p-4">
+                <div class="flex items-center justify-between text-[10px] text-gray-400 border-b border-white/10 pb-2">
+                  <span class="flex items-center gap-1 text-white font-bold"><i data-lucide="zap" class="w-3 h-3 text-brand-400"></i> SpeedPost</span>
+                  <span class="text-emerald-400 font-mono">100% Online</span>
+                </div>
+
+                <div class="text-center space-y-2 my-auto">
+                  <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-pink-500 to-purple-600 mx-auto flex items-center justify-center text-white shadow-lg shadow-purple-500/30">
+                    <i data-lucide="play" class="w-7 h-7 ml-1"></i>
+                  </div>
+                  <p class="text-xs font-bold text-white">Reel Programado</p>
+                  <p class="text-[10px] text-gray-400">Disparo automático agendado</p>
+                  <span class="inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Fila de Disparo Ativa</span>
+                </div>
+
+                <div class="bg-dark-900/90 rounded-xl p-2.5 text-[10px] text-gray-300 border border-white/5 space-y-1">
+                  <div class="flex justify-between font-semibold text-white">
+                    <span>Hoje às 18:00</span>
+                    <span class="text-brand-300">Brasília</span>
+                  </div>
+                  <p class="text-gray-400 truncate">Legenda, hashtags e áudio prontos...</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="space-y-4">
+              <div class="p-5 rounded-2xl bg-dark-950/80 border border-white/10 hover:border-brand-500/40 transition-all">
+                <div class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center mb-3">
+                  <i data-lucide="eye" class="w-5 h-5"></i>
+                </div>
+                <h3 class="text-sm font-bold text-white">Simulador em Tempo Real</h3>
+                <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+                  Veja exatamente como seu vídeo ficará no formato vertical 9:16 do Instagram antes do disparo oficial.
+                </p>
+              </div>
+
+              <div class="p-5 rounded-2xl bg-dark-950/80 border border-white/10 hover:border-brand-500/40 transition-all">
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3">
+                  <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                </div>
+                <h3 class="text-sm font-bold text-white">Métricas de Performance</h3>
+                <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+                  Acompanhe visualizações acumuladas, alcance único e evolução de novos seguidores sincronizados da Meta.
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="mt-8 pt-6 border-t border-white/10 text-center">
+            <button onclick="openAuthModal('register')" class="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md transition-all">
+              Criar Conta e Experimentar Agora ➔
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- FEATURES SECTION -->
+      <div id="features" class="py-16">
+        <div class="text-center max-w-2xl mx-auto mb-12 space-y-3">
+          <span class="text-xs font-bold text-brand-400 uppercase tracking-wider">Recursos de Alta Performance</span>
+          <h2 class="text-3xl font-extrabold text-white">Tudo para Turbinar sua Presença Digital</h2>
+          <p class="text-xs sm:text-sm text-gray-400">Projetado com arquitetura multi-tenant escalável para suportar criadores individuais e grandes agências.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          <div class="glass-panel rounded-2xl p-6 border border-white/5 hover:border-white/20 transition-all interactive-card">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-500 to-rose-600 flex items-center justify-center text-white mb-4 shadow-md">
+              <i data-lucide="share-2" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-white mb-2">Conexão Oficial Meta Graph API</h3>
+            <p class="text-xs text-gray-400 leading-relaxed">
+              Integração via OAuth 2.0 oficial. A plataforma nunca tem acesso à sua senha nem armazena credenciais confidenciais.
+            </p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-6 border border-white/5 hover:border-white/20 transition-all interactive-card">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white mb-4 shadow-md">
+              <i data-lucide="smartphone" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-white mb-2">Player & Simulador Nativo</h3>
+            <p class="text-xs text-gray-400 leading-relaxed">
+              Simulação idêntica ao app do Instagram com avatar dinâmico, @ do seu perfil, áudio original e preview instantâneo de texto.
+            </p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-6 border border-white/5 hover:border-white/20 transition-all interactive-card">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-500 flex items-center justify-center text-white mb-4 shadow-md">
+              <i data-lucide="calendar-check" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-white mb-2">Fila de Disparo Automático</h3>
+            <p class="text-xs text-gray-400 leading-relaxed">
+              Defina data e hora exatas no fuso horário de Brasília. Nossos servidores em nuvem disparam sua publicação no segundo programado.
+            </p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-6 border border-white/5 hover:border-white/20 transition-all interactive-card">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-white mb-4 shadow-md">
+              <i data-lucide="users" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-white mb-2">Multi-Tenant & Isolamento Total</h3>
+            <p class="text-xs text-gray-400 leading-relaxed">
+              Cada cliente possui sua conta isolada. Zero risco de misturar perfis de redes sociais, vídeos ou postagens de outras contas.
+            </p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-6 border border-white/5 hover:border-white/20 transition-all interactive-card">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white mb-4 shadow-md">
+              <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-white mb-2">Mídias Pesadas em 4K/FullHD</h3>
+            <p class="text-xs text-gray-400 leading-relaxed">
+              Suporta arquivos pesados de até 500MB em MP4, MOV e WebM com compressão otimizada para a taxa máxima de quadros do Instagram.
+            </p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-6 border border-white/5 hover:border-white/20 transition-all interactive-card">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white mb-4 shadow-md">
+              <i data-lucide="trending-up" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-white mb-2">Analytics & Relatórios</h3>
+            <p class="text-xs text-gray-400 leading-relaxed">
+              Descubra quais vídeos performaram melhor com gráficos temporais de alcance, novos seguidores e visualizações acumuladas.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- HOW IT WORKS -->
+      <div id="how-it-works" class="py-16">
+        <div class="text-center max-w-2xl mx-auto mb-12 space-y-3">
+          <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">Passo a Passo Descomplicado</span>
+          <h2 class="text-3xl font-extrabold text-white">Como Funciona em 3 Etapas</h2>
+          <p class="text-xs sm:text-sm text-gray-400">Você só precisa configurar uma vez e começar a programar seus posts.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <div class="glass-panel rounded-2xl p-6 border border-white/5 relative">
+            <span class="text-4xl font-black text-brand-500/20 mb-3 block">01</span>
+            <h3 class="text-base font-bold text-white mb-2">Crie sua Conta Grátis</h3>
+            <p class="text-xs text-gray-400 leading-relaxed">
+              Cadastre-se com seu email em menos de 30 segundos. Sem necessidade de cartão de crédito.
+            </p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-6 border border-white/5 relative">
+            <span class="text-4xl font-black text-blue-500/20 mb-3 block">02</span>
+            <h3 class="text-base font-bold text-white mb-2">Conecte seu Instagram</h3>
+            <p class="text-xs text-gray-400 leading-relaxed">
+              Clique em "Conectar via Meta OAuth" e autorize com a sua conta comercial ou criador de conteúdo.
+            </p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-6 border border-white/5 relative">
+            <span class="text-4xl font-black text-emerald-500/20 mb-3 block">03</span>
+            <h3 class="text-base font-bold text-white mb-2">Agende e Relaxe</h3>
+            <p class="text-xs text-gray-400 leading-relaxed">
+              Arraste seu vídeo, escreva a legenda com hashtags e escolha a data. O sistema publica no horário exato!
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- META SECURITY & COMPLIANCE -->
+      <div id="meta-security" class="py-12">
+        <div class="glass-panel rounded-3xl p-6 sm:p-10 border border-emerald-500/30 bg-gradient-to-r from-emerald-950/20 via-dark-900/60 to-dark-950 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div class="space-y-3 max-w-xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
+              <span>Segurança & Conformidade Meta</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white">
+              Sua conta segura, 100% de acordo com as regras
+            </h2>
+            <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
+              Diferente de ferramentas piratas que pedem sua senha e causam bloqueios na conta, o SpeedPost Studio opera 100% através dos protocolos oficiais da Meta Graph API (v19.0). Seus dados são criptografados e você tem total controle.
+            </p>
+            <div class="flex items-center gap-4 pt-2 text-xs text-gray-400">
+              <a href="/privacy" target="_blank" class="hover:text-emerald-300 underline">Política de Privacidade</a>
+              <a href="/terms" target="_blank" class="hover:text-emerald-300 underline">Termos de Serviço</a>
+              <a href="/data-deletion" target="_blank" class="hover:text-emerald-300 underline">Exclusão de Dados</a>
+            </div>
+          </div>
+
+          <div class="shrink-0 p-6 rounded-2xl bg-dark-950 border border-emerald-500/20 text-center space-y-3 max-w-xs">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+              <i data-lucide="lock" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-sm font-bold text-white">Protocolo OAuth 2.0</h3>
+            <p class="text-[11px] text-gray-400">Tokens criptografados com renovação automática a cada 60 dias sem interrupção de serviço.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRICING SECTION -->
+      <div id="pricing" class="py-16">
+        <div class="text-center max-w-2xl mx-auto mb-12 space-y-3">
+          <span class="text-xs font-bold text-purple-400 uppercase tracking-wider">Planos & Preços</span>
+          <h2 class="text-3xl font-extrabold text-white">Escolha o Melhor Plano para Você</h2>
+          <p class="text-xs sm:text-sm text-gray-400">Comece sem custos e escale conforme sua produção de conteúdo crescer.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          
+          <!-- Plano Gratuito -->
+          <div class="glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between interactive-card">
+            <div>
+              <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Iniciante</span>
+              <h3 class="text-xl font-bold text-white mt-1">Gratuito</h3>
+              <div class="my-4">
+                <span class="text-3xl font-black text-white">R$ 0</span>
+                <span class="text-xs text-gray-400">/ sempre</span>
+              </div>
+              <ul class="space-y-2.5 text-xs text-gray-300">
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> 1 Conta do Instagram</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Até 10 agendamentos / mês</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Simulador de Reels em tempo real</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Calendário visual</li>
+              </ul>
+            </div>
+            <button onclick="openAuthModal('register')" class="w-full mt-6 py-3 rounded-xl bg-dark-900 hover:bg-white/10 border border-white/10 text-white font-bold text-xs transition-all">
+              Começar Grátis
+            </button>
+          </div>
+
+          <!-- Plano Pro (Destaque) -->
+          <div class="glass-panel rounded-2xl p-6 border-2 border-brand-500 glow-border flex flex-col justify-between relative transform md:-translate-y-2 bg-gradient-to-b from-brand-900/20 to-dark-950">
+            <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-brand-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md">
+              Mais Popular
+            </span>
+            <div>
+              <span class="text-xs font-bold text-brand-300 uppercase tracking-wider">Criador Pro</span>
+              <h3 class="text-xl font-bold text-white mt-1">Profissional</h3>
+              <div class="my-4">
+                <span class="text-3xl font-black text-white">R$ 49</span>
+                <span class="text-xs text-gray-400">/ mês</span>
+              </div>
+              <ul class="space-y-2.5 text-xs text-gray-200">
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> <strong>Contas Ilimitadas</strong></li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> <strong>Agendamentos Ilimitados</strong></li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Mídias pesadas até 500MB</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Analytics oficial completo (90 dias)</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Suporte prioritário</li>
+              </ul>
+            </div>
+            <button onclick="openAuthModal('register')" class="w-full mt-6 py-3.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-brand-500/25 transition-all">
+              Assinar Pro ➔
+            </button>
+          </div>
+
+          <!-- Plano Agência -->
+          <div class="glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between interactive-card">
+            <div>
+              <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Empresas</span>
+              <h3 class="text-xl font-bold text-white mt-1">Agência</h3>
+              <div class="my-4">
+                <span class="text-3xl font-black text-white">R$ 149</span>
+                <span class="text-xs text-gray-400">/ mês</span>
+              </div>
+              <ul class="space-y-2.5 text-xs text-gray-300">
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Tudo do plano Pro</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Múltiplos membros de equipe</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Relatórios exportáveis em PDF/CSV</li>
+                <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i> Gerente de conta dedicado</li>
+              </ul>
+            </div>
+            <button onclick="openAuthModal('register')" class="w-full mt-6 py-3 rounded-xl bg-dark-900 hover:bg-white/10 border border-white/10 text-white font-bold text-xs transition-all">
+              Falar com Consultor
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- FINAL CTA BANNER -->
+      <div class="py-12">
+        <div class="glass-panel rounded-3xl p-8 sm:p-12 text-center border border-brand-500/30 bg-gradient-to-r from-brand-900/30 via-indigo-900/20 to-purple-900/30 space-y-5">
+          <h2 class="text-3xl sm:text-4xl font-black text-white">
+            Pronto para Economizar Horas Toda Semana?
+          </h2>
+          <p class="text-sm text-gray-300 max-w-xl mx-auto">
+            Junte-se a criadores que usam o SpeedPost Studio para manter o feed ativo e constante sem esforço diário.
+          </p>
+          <div class="pt-2">
+            <button onclick="openAuthModal('register')" class="px-8 py-4 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-sm shadow-xl shadow-brand-600/30 inline-flex items-center gap-2 transition-all">
+              <i data-lucide="rocket" class="w-4 h-4"></i>
+              <span>Criar Minha Conta Grátis Agora</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <footer class="pt-12 pb-6 border-t border-white/10 text-xs text-gray-400 space-y-6">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-6 h-6 rounded-lg bg-brand-600 flex items-center justify-center text-white">
+              <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+            </div>
+            <span class="font-bold text-white">SpeedPost Studio</span>
+            <span class="text-[10px] text-gray-500">© 2026 Todos os direitos reservados.</span>
+          </div>
+
+          <div class="flex items-center gap-5">
+            <a href="/privacy" target="_blank" class="hover:text-white transition-colors">Privacidade</a>
+            <a href="/terms" target="_blank" class="hover:text-white transition-colors">Termos de Uso</a>
+            <a href="/data-deletion" target="_blank" class="hover:text-white transition-colors">Exclusão de Dados</a>
+            <a href="https://speedpost.com.br/api-docs" target="_blank" class="hover:text-brand-300 transition-colors">API Docs</a>
+          </div>
+        </div>
+      </footer>
+
+    </section>
+
+    <section id="section-studio" class="tab-section hidden">
       <div class="mb-6">
         <div class="flex items-center gap-2 text-brand-400 text-xs font-semibold uppercase tracking-wider mb-1">
           <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Estúdio de Criação & Distribuição
@@ -388,7 +861,7 @@
             <!-- Presets -->
             <div class="flex items-center gap-2 flex-wrap mb-4">
               <span class="text-xs text-gray-400">Atalhos:</span>
-              <button type="button" onclick="setPresetTime('today-18')" class="px-2.5 py-1 rounded-lg bg-dark-900 hover:bg-white/10 text-xs font-medium text-gray-300 border border-white/5 transition-all">Hoje às 18:00</button>
+              <button type="button" onclick="setPresetTime('today-18')\" class=\"px-2.5 py-1 rounded-lg bg-dark-900 hover:bg-white/10 text-xs font-medium text-gray-300 border border-white/5 transition-all">Hoje às 18:00</button>
               <button type="button" onclick="setPresetTime('today-21')" class="px-2.5 py-1 rounded-lg bg-dark-900 hover:bg-white/10 text-xs font-medium text-gray-300 border border-white/5 transition-all">Hoje às 21:00</button>
               <button type="button" onclick="setPresetTime('tomorrow-12')" class="px-2.5 py-1 rounded-lg bg-dark-900 hover:bg-white/10 text-xs font-medium text-gray-300 border border-white/5 transition-all">Amanhã às 12:00</button>
               <button type="button" onclick="setPresetTime('tomorrow-18')" class="px-2.5 py-1 rounded-lg bg-dark-900 hover:bg-white/10 text-xs font-medium text-gray-300 border border-white/5 transition-all">Amanhã às 18:00</button>
@@ -1011,15 +1484,15 @@
         <div class="space-y-2">
           <div class="flex items-center justify-between text-xs">
             <span class="text-gray-400">Status:</span>
-            <span id="modal-post-status" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold">--</span>
+            <span id="modal-post-status" class="px-2.5 py-0.5 rounded-full font-semibold">--</span>
           </div>
           <div class="flex items-center justify-between text-xs">
-            <span class="text-gray-400">Data / Horário:</span>
-            <span id="modal-post-date" class="font-mono text-white">--</span>
+            <span class="text-gray-400">Data Programada:</span>
+            <span id="modal-post-date" class="font-semibold text-white">--</span>
           </div>
           <div class="flex items-center justify-between text-xs">
-            <span class="text-gray-400">ID SpeedPost:</span>
-            <span id="modal-post-id" class="font-mono text-brand-300 select-all">--</span>
+            <span class="text-gray-400">ID da Postagem:</span>
+            <span id="modal-post-id" class="font-mono text-gray-400">--</span>
           </div>
         </div>
 
