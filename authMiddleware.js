@@ -40,6 +40,7 @@ async function requireAuth(req, res, next) {
   }
 }
 
+// Optional Auth (if token present, attaches user; else leaves req.user null)
 async function optionalAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
   if (authHeader) {
@@ -49,11 +50,6 @@ async function optionalAuth(req, res, next) {
       const user = await get('SELECT id, name, email, plan, role, created_at FROM users WHERE id = ?', [decoded.id]);
       if (user) req.user = user;
     } catch {}
-  }
-  
-  if (!req.user) {
-    const defaultUser = await get('SELECT id, name, email, plan, role, created_at FROM users LIMIT 1');
-    if (defaultUser) req.user = defaultUser;
   }
   next();
 }
