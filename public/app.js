@@ -100,26 +100,58 @@ function switchTab(tabId) {
 // ----------------------------------------------------
 async function loadUserProfile() {
   try {
+    if (!state.token) {
+      state.user = null;
+      state.userAccounts = [];
+      updateUserAuthHeader();
+      updateGuestBanner();
+      return;
+    }
     const res = await apiFetch('/api/auth/me');
     if (res.ok) {
       const data = await res.json();
       state.user = data.user;
       state.userAccounts = data.accounts || [];
       updateUserAuthHeader();
+      updateGuestBanner();
+
+      // Show API tab only for admin
+      if (state.user && (state.user.role === 'admin' || state.user.email === 'admin@speedpost.com')) {
+        document.getElementById('tab-btn-settings')?.classList.remove('hidden');
+        document.getElementById('m-tab-settings')?.classList.remove('hidden');
+      }
     } else {
       state.user = null;
       state.token = null;
       localStorage.removeItem('speedpost_user_token');
       updateUserAuthHeader();
+      updateGuestBanner();
     }
   } catch (err) {
     console.warn('Auth check error:', err);
+    state.user = null;
     updateUserAuthHeader();
+    updateGuestBanner();
+  }
+}
+
+function updateGuestBanner() {
+  const banner = document.getElementById('guest-welcome-banner');
+  if (banner) {
+    if (state.user) {
+      banner.classList.add('hidden');
+    } else {
+      banner.classList.remove('hidden');
+    }
   }
 }
 
 function updateUserAuthHeader() {
   const container = document.getElementById('user-auth-header-container');
+  const badge = document.getElementById('active-account-badge');
+  const accUser = document.getElementById('account-username');
+  const accFoll = document.getElementById('account-followers');
+  const avatarContainer = document.getElementById('account-avatar-container');
   if (!container) return;
 
   if (state.user) {
@@ -138,12 +170,29 @@ function updateUserAuthHeader() {
         </button>
       </div>
     `;
+
+    if (state.currentAccount) {
+      badge?.classList.remove('hidden');
+      if (accUser) accUser.textContent = state.currentAccount.username;
+      if (accFoll) accFoll.textContent = formatNumber(state.currentAccount.followers_count || 0);
+      if (avatarContainer) {
+        avatarContainer.innerHTML = state.currentAccount.profile_picture_url 
+          ? `<img src="${state.currentAccount.profile_picture_url}" class="w-full h-full object-cover rounded-full" />`
+          : `<i data-lucide="instagram" class="w-3.5 h-3.5 text-white"></i>`;
+      }
+    } else {
+      badge?.classList.add('hidden');
+    }
   } else {
     container.innerHTML = `
       <button onclick="openAuthModal('login')" class="px-3.5 py-1.5 rounded-xl bg-dark-900 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
         <i data-lucide="user" class="w-3.5 h-3.5"></i> Entrar
       </button>
+      <button onclick="openAuthModal('register')" class="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all">
+        Criar Conta
+      </button>
     `;
+    badge?.classList.add('hidden');
   }
   lucide.createIcons();
 }
@@ -237,17 +286,30 @@ async function handleAuthSubmit(e) {
 function logout() {
   state.token = null;
   state.user = null;
+  state.currentAccount = null;
+  state.userAccounts = [];
   localStorage.removeItem('speedpost_user_token');
   showToast('Você saiu da sua conta.', 'info');
   updateUserAuthHeader();
+  updateGuestBanner();
   loadUserConnectedAccounts();
   loadCalendarPosts();
+  loadAccountAnalytics();
+  loadPublishedContent();
+  document.getElementById('tab-btn-settings')?.classList.add('hidden');
+  document.getElementById('m-tab-settings')?.classList.add('hidden');
 }
 
 // ----------------------------------------------------
 // ABORDAGEM 1: META & INSTAGRAM OAUTH DIRETO
 // ----------------------------------------------------
 async function initiateMetaOAuth() {
+  if (!state.user) {
+    showToast('Você precisa entrar ou criar uma conta para conectar suas redes sociais!', 'warning');
+    openAuthModal('register');
+    return;
+  }
+
   try {
     const res = await apiFetch('/api/auth/meta/url');
     const data = await res.json();
@@ -258,7 +320,6 @@ async function initiateMetaOAuth() {
         window.location.href = data.url;
       }, 800);
     } else {
-      // Keys not configured yet in .env - inform user and open instant sandbox modal
       showToast('Credenciais da Meta ainda não configuradas no .env. Use o Modo Sandbox!', 'warning');
       openMockConnectModal();
     }
@@ -284,6 +345,11 @@ function checkMetaCallbackUrl() {
 
 // Sandbox Mock Connect Modal
 function openMockConnectModal() {
+  if (!state.user) {
+    showToast('Você precisa entrar ou criar uma conta para vincular um perfil de testes!', 'warning');
+    openAuthModal('register');
+    return;
+  }
   const modal = document.getElementById('modal-mock-connect');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
@@ -329,33 +395,82 @@ async function handleMockConnectSubmit(e) {
 
 // Load Connected Accounts for Current User
 async function loadUserConnectedAccounts() {
+  if (!state.user) {
+    state.userAccounts = [];
+    state.currentAccount = null;
+    const countEl = document.getElementById('user-accounts-count');
+    if (countEl) countEl.textContent = '0';
+    renderUserConnectedAccounts([]);
+    updateStudioAccountSelect([]);
+    updateReelMockup(null);
+    updateUserAuthHeader();
+    return;
+  }
+
   try {
     const res = await apiFetch('/api/user/accounts');
     const data = await res.json();
     const accounts = data.accounts || [];
     state.userAccounts = accounts;
 
-    document.getElementById('user-accounts-count').textContent = accounts.length;
+    const countEl = document.getElementById('user-accounts-count');
+    if (countEl) countEl.textContent = accounts.length;
+
     renderUserConnectedAccounts(accounts);
+    updateStudioAccountSelect(accounts);
 
-    // Update Studio Account Select Dropdown
-    const selectAcc = document.getElementById('select-account');
     if (accounts.length > 0) {
-      selectAcc.innerHTML = accounts.map(a => `
-        <option value="${a.id}">${a.username} (${a.platform} - ${formatNumber(a.followers_count || 0)} seg)</option>
-      `).join('');
-
-      // Set active account to first one if not set
       if (!state.currentAccount || !accounts.find(a => a.id === state.currentAccount.id)) {
         state.currentAccount = accounts[0];
-        document.getElementById('account-username').textContent = accounts[0].username;
-        document.getElementById('account-followers').textContent = formatNumber(accounts[0].followers_count || 0);
       }
     } else {
-      selectAcc.innerHTML = `<option value="cmqwqytic2po99xgdlf08vnc1">@cenasqueamo._ (Padrão)</option>`;
+      state.currentAccount = null;
     }
+
+    updateUserAuthHeader();
+    updateReelMockup(state.currentAccount);
   } catch (err) {
     console.error('Error loading user accounts:', err);
+  }
+}
+
+function updateStudioAccountSelect(accounts) {
+  const selectAcc = document.getElementById('select-account');
+  if (!selectAcc) return;
+
+  if (accounts.length > 0) {
+    selectAcc.innerHTML = accounts.map(a => `
+      <option value="${a.id}">${a.username} (${a.platform} - ${formatNumber(a.followers_count || 0)} seg)</option>
+    `).join('');
+  } else {
+    selectAcc.innerHTML = `<option value="">Nenhuma conta conectada — Clique em "Conectar nova conta"</option>`;
+  }
+}
+
+function onAccountSelectChange(accountId) {
+  const acc = state.userAccounts.find(a => a.id === accountId);
+  if (acc) {
+    state.currentAccount = acc;
+    updateUserAuthHeader();
+    updateReelMockup(acc);
+  }
+}
+
+function updateReelMockup(account) {
+  const usernameEl = document.getElementById('mockup-username');
+  const avatarEl = document.getElementById('mockup-avatar');
+  const audioEl = document.getElementById('mockup-audio-tag');
+
+  if (account) {
+    if (usernameEl) usernameEl.textContent = account.username;
+    if (audioEl) audioEl.textContent = `Áudio original — ${account.username}`;
+    if (avatarEl && account.profile_picture_url) {
+      avatarEl.src = account.profile_picture_url;
+    }
+  } else {
+    if (usernameEl) usernameEl.textContent = '@seu_perfil';
+    if (audioEl) audioEl.textContent = 'Áudio original';
+    if (avatarEl) avatarEl.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=user';
   }
 }
 
@@ -685,7 +800,7 @@ async function loadSampleVideo() {
     const blob = await response.blob();
     const file = new File([blob], 'trailer_demo.mp4', { type: 'video/mp4' });
 
-    const sampleCaption = `Uma das cenas mais marcantes da história do cinema! 🍿🎬\n\nVocê já assistiu a esse clássico? Comente abaixo a sua opinião!\n\n#cinema #filmes #cenasqueamo #reels #curiosidades`;
+    const sampleCaption = `Uma das cenas mais marcantes da história do cinema! 🍿🎬\n\nVocê já assistiu a esse clássico? Comente abaixo a sua opinião!\n\n#cinema #filmes #classicos #reels #curiosidades`;
     document.getElementById('caption-input').value = sampleCaption;
     document.getElementById('char-count').textContent = sampleCaption.length;
     document.getElementById('preview-caption-text').textContent = sampleCaption;
@@ -727,19 +842,32 @@ function insertEmoji(emoji) {
 }
 
 async function submitSchedulePost() {
+  if (!state.user) {
+    showToast('Você precisa criar uma conta ou fazer login para agendar vídeos!', 'warning');
+    openAuthModal('register');
+    return;
+  }
+
   if (!state.uploadedMedia || !state.uploadedMedia.mediaId) {
     showToast('Faça o upload de um vídeo antes de agendar.', 'warning');
     return;
   }
 
   const workspaceId = document.getElementById('select-workspace')?.value || 'cmqwqwvvf2pnp9xgds8emvo9c';
-  const accountId = document.getElementById('select-account')?.value || (state.currentAccount && state.currentAccount.id) || 'cmqwqytic2po99xgdlf08vnc1';
-  const caption = document.getElementById('caption-input').value.trim();
-  const dateVal = document.getElementById('schedule-date').value;
-  const timeVal = document.getElementById('schedule-time').value;
+  const accountId = document.getElementById('select-account')?.value || (state.currentAccount && state.currentAccount.id);
+
+  if (!accountId) {
+    showToast('Você precisa conectar uma conta de Instagram na aba "Redes Conectadas" antes de agendar.', 'warning');
+    switchTab('accounts');
+    return;
+  }
+
+  const caption = document.getElementById('caption-input')?.value || '';
+  const dateVal = document.getElementById('schedule-date')?.value;
+  const timeVal = document.getElementById('schedule-time')?.value;
 
   if (!dateVal || !timeVal) {
-    showToast('Informe a data e o horário para agendamento.', 'warning');
+    showToast('Informe a data e o horário do agendamento.', 'warning');
     return;
   }
 
@@ -997,7 +1125,7 @@ function renderMonthView() {
     html += `<div class="p-2 min-h-[90px] rounded-xl bg-dark-950/20 text-gray-600 text-xs border border-white/[0.02]">${daysInPrevMonth - i}</div>`;
   }
 
-  for (day = 1; day <= daysInMonth; day++) {
+  for (let day = 1; day <= daysInMonth; day++) {
     const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const postsOnDay = state.calendarPosts.filter(p => {
       const pDate = (p.scheduled_at || p.scheduledAt || p.publishedAt || '').substring(0, 10);
@@ -1076,11 +1204,17 @@ async function cancelPost(postId) {
 // PUBLISHED CONTENT & METRICS
 // ----------------------------------------------------
 async function loadPublishedContent() {
+  if (!state.user || !state.currentAccount) {
+    state.publishedContent = [];
+    renderPublishedContent();
+    return;
+  }
+
   const refreshIcon = document.getElementById('content-refresh-icon');
   if (refreshIcon) refreshIcon.classList.add('animate-spin');
 
   try {
-    const accId = state.currentAccount ? state.currentAccount.id : 'cmqwqytic2po99xgdlf08vnc1';
+    const accId = state.currentAccount.id;
     const res = await apiFetch(`/api/content/account/${accId}?limit=30`);
     const data = await res.json();
 
@@ -1147,7 +1281,7 @@ function renderPublishedContent() {
         <div class="p-5 space-y-4 flex-1 flex flex-col justify-between">
           <div>
             <div class="text-[11px] text-gray-400 font-mono mb-1.5 flex items-center gap-1">
-              <i data-lucide="calendar" class="w-3-3 text-brand-400"></i> ${pubDate}
+              <i data-lucide="calendar" class="w-3 h-3 text-brand-400"></i> ${pubDate}
             </div>
             <p class="text-xs text-gray-300 leading-relaxed line-clamp-3">${captionSnippet}</p>
           </div>
@@ -1184,23 +1318,49 @@ function formatNumber(num) {
 // ANALYTICS & CHARTS
 // ----------------------------------------------------
 async function loadAccountAnalytics() {
+  if (!state.user || !state.currentAccount) {
+    state.analyticsData = {
+      followers: 0,
+      followersGrowth: 0,
+      views: 0,
+      reach: 0,
+      engagement: { likes: 0 },
+      daily: []
+    };
+    const follEl = document.getElementById('stat-followers');
+    if (follEl) follEl.textContent = '0';
+    const growthEl = document.getElementById('stat-followers-growth');
+    if (growthEl) growthEl.textContent = '0 no período';
+    const viewsEl = document.getElementById('stat-views');
+    if (viewsEl) viewsEl.textContent = '0';
+    const reachEl = document.getElementById('stat-reach');
+    if (reachEl) reachEl.textContent = '0';
+    const likesEl = document.getElementById('stat-likes');
+    if (likesEl) likesEl.textContent = '0';
+    const headerFoll = document.getElementById('account-followers');
+    if (headerFoll) headerFoll.textContent = '0';
+    renderAnalyticsChart();
+    return;
+  }
+
   try {
-    const accId = state.currentAccount ? state.currentAccount.id : 'cmqwqytic2po99xgdlf08vnc1';
+    const accId = state.currentAccount.id;
     const res = await apiFetch(`/api/analytics/account/${accId}?period=${state.analyticsPeriod}`);
     const data = await res.json();
 
     if (data) {
       state.analyticsData = data;
       
-      if (data.followers) document.getElementById('stat-followers').textContent = data.followers.toLocaleString('pt-BR');
+      if (data.followers !== undefined) document.getElementById('stat-followers').textContent = data.followers.toLocaleString('pt-BR');
       if (data.followersGrowth !== undefined) {
         document.getElementById('stat-followers-growth').textContent = `+${data.followersGrowth} no período`;
       }
-      if (data.views) document.getElementById('stat-views').textContent = data.views.toLocaleString('pt-BR');
-      if (data.reach) document.getElementById('stat-reach').textContent = data.reach.toLocaleString('pt-BR');
-      if (data.engagement?.likes) document.getElementById('stat-likes').textContent = data.engagement.likes.toLocaleString('pt-BR');
+      if (data.views !== undefined) document.getElementById('stat-views').textContent = data.views.toLocaleString('pt-BR');
+      if (data.reach !== undefined) document.getElementById('stat-reach').textContent = data.reach.toLocaleString('pt-BR');
+      if (data.engagement?.likes !== undefined) document.getElementById('stat-likes').textContent = data.engagement.likes.toLocaleString('pt-BR');
 
-      document.getElementById('account-followers').textContent = formatNumber(data.followers || 183503);
+      const headerFoll = document.getElementById('account-followers');
+      if (headerFoll) headerFoll.textContent = formatNumber(data.followers || 0);
       renderAnalyticsChart();
     }
   } catch (err) {
