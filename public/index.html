@@ -69,18 +69,17 @@
           </div>
         </div>
 
-        <!-- Account Badge -->
+        <!-- Account Badge (Rendered dynamically by JS) -->
         <div id="active-account-badge" class="hidden md:flex items-center gap-2 pl-4 border-l border-white/10">
-          <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center text-xs font-bold">
-            <i data-lucide="instagram" class="w-3.5 h-3.5 text-white"></i>
+          <div id="account-avatar-container" class="w-7 h-7 rounded-full bg-dark-900 border border-white/20 flex items-center justify-center text-xs font-bold text-gray-400">
+            <i data-lucide="user" class="w-3.5 h-3.5"></i>
           </div>
           <div class="text-left">
             <div class="text-xs font-medium text-white flex items-center gap-1.5">
-              <span id="account-username">@cenasqueamo._</span>
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span id="account-username">Não conectado</span>
             </div>
             <div class="text-[10px] text-gray-400">
-              <span id="account-followers" class="text-brand-300 font-semibold">183.5k</span> seguidores
+              <span id="account-followers" class="text-brand-300 font-semibold">0</span> seguidores
             </div>
           </div>
         </div>
@@ -103,7 +102,7 @@
         <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5">
           <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics
         </button>
-        <button onclick="switchTab('settings')" id="tab-btn-settings" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5">
+        <button onclick="switchTab('settings')" id="tab-btn-settings" class="nav-tab hidden px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5">
           <i data-lucide="settings" class="w-4 h-4"></i> API & Config
         </button>
       </nav>
@@ -119,9 +118,11 @@
 
         <!-- User Profile / Login Button Container -->
         <div id="user-auth-header-container" class="flex items-center gap-2">
-          <!-- Populated by JS: Logged In Badge or Login Button -->
           <button onclick="openAuthModal('login')" class="px-3.5 py-1.5 rounded-xl bg-dark-900 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
             <i data-lucide="user" class="w-3.5 h-3.5"></i> Entrar
+          </button>
+          <button onclick="openAuthModal('register')" class="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all">
+            Criar Conta
           </button>
         </div>
 
@@ -172,8 +173,29 @@
           Agendar Novo Vídeo
         </h1>
         <p class="text-sm text-gray-400 mt-1">
-          Faça upload da sua mídia, personalize a legenda e programe a publicação automática via SpeedPost.
+          Faça upload da sua mídia, personalize a legenda e programe a publicação automática no seu perfil.
         </p>
+      </div>
+
+      <!-- Guest Welcome Alert (Visible only when not logged in) -->
+      <div id="guest-welcome-banner" class="glass-panel rounded-2xl p-4 sm:p-5 mb-6 border border-brand-500/30 bg-gradient-to-r from-brand-900/30 via-dark-900/40 to-indigo-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-brand-600/30 text-brand-300 flex items-center justify-center shrink-0 border border-brand-500/30">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white">Bem-vindo ao SpeedPost Studio!</h3>
+            <p class="text-xs text-gray-400">Crie sua conta ou faça login para conectar suas redes sociais e agendar seus vídeos.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button type="button" onclick="openAuthModal('login')" class="px-3.5 py-2 rounded-xl bg-dark-900 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white transition-all">
+            Já tenho conta
+          </button>
+          <button type="button" onclick="openAuthModal('register')" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-bold text-white shadow-md shadow-brand-600/30 transition-all">
+            Criar Conta Grátis
+          </button>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -302,20 +324,18 @@
               </label>
             </div>
 
-            <!-- Workspace and Account select -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-medium text-gray-400 mb-1.5">Workspace SpeedPost</label>
-                <select id="select-workspace" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
-                  <option value="cmqwqwvvf2pnp9xgds8emvo9c">cenas que amo (cmqwqwvv...)</option>
-                </select>
+            <!-- Destination Account -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-medium text-gray-400">Conta de Publicação (Instagram / Facebook)</label>
+                <button type="button" onclick="switchTab('accounts')" class="text-[11px] text-pink-400 hover:text-pink-300 font-semibold flex items-center gap-1 transition-colors">
+                  <i data-lucide="plus" class="w-3 h-3"></i> Conectar nova conta
+                </button>
               </div>
-              <div>
-                <label class="block text-xs font-medium text-gray-400 mb-1.5">Conta Conectada</label>
-                <select id="select-account" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
-                  <option value="cmqwqytic2po99xgdlf08vnc1">@cenasqueamo._ (Instagram - Ativo)</option>
-                </select>
-              </div>
+              <select id="select-account" onchange="onAccountSelectChange(this.value)" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500">
+                <option value="">Nenhuma conta conectada — Clique em Conectar Conta</option>
+              </select>
+              <input type="hidden" id="select-workspace" value="cmqwqwvvf2pnp9xgds8emvo9c" />
             </div>
           </div>
 
@@ -487,13 +507,11 @@
               <div class="absolute bottom-5 inset-x-4 z-30 text-white space-y-2 pointer-events-none">
                 <!-- Profile -->
                 <div class="flex items-center gap-2">
-                  <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 p-0.5">
-                    <div class="w-full h-full rounded-full bg-dark-900 flex items-center justify-center text-[10px] font-bold">
-                      C
-                    </div>
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 p-0.5 overflow-hidden shrink-0">
+                    <img id="mockup-avatar" src="https://api.dicebear.com/7.x/identicon/svg?seed=user" alt="Avatar" class="w-full h-full object-cover rounded-full" />
                   </div>
                   <div class="flex items-center gap-1.5">
-                    <span class="text-xs font-bold">cenasqueamo._</span>
+                    <span id="mockup-username" class="text-xs font-bold">@seu_perfil</span>
                     <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-semibold">Seguir</span>
                   </div>
                 </div>
@@ -506,7 +524,7 @@
                 <!-- Audio tag -->
                 <div class="flex items-center gap-1.5 text-[10px] text-gray-300">
                   <i data-lucide="music" class="w-3 h-3"></i>
-                  <span class="truncate">Áudio original — cenasqueamo._</span>
+                  <span id="mockup-audio-tag" class="truncate">Áudio original — @seu_perfil</span>
                 </div>
               </div>
 
@@ -621,7 +639,7 @@
             Posts Publicados & Métricas
           </h1>
           <p class="text-sm text-gray-400 mt-1">
-            Métricas oficiais sincronizadas da Meta/SpeedPost para a conta <span class="text-brand-300 font-semibold">@cenasqueamo._</span>
+            Métricas oficiais sincronizadas da Meta para as suas redes conectadas.
           </p>
         </div>
 
@@ -857,7 +875,6 @@
           </div>
         </div>
 
-      </div>
     </section>
 
     <!-- ========================================== -->
