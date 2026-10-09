@@ -65,7 +65,11 @@ function getSpeedPostClient(req) {
   });
 }
 
-// 1. AUTENTICAÇÃO DE USUÁRIOS
+// ====================================================
+// 1. AUTENTICAÇÃO DE USUÁRIOS (SaaS Multi-Tenant)
+// ====================================================
+
+// Registro de Novo Usuário
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -106,6 +110,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+// Login de Usuário
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -145,6 +150,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// Obter dados do usuário logado e contas vinculadas
 app.get('/api/auth/me', optionalAuth, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Não autenticado.' });
@@ -163,7 +169,11 @@ app.get('/api/auth/me', optionalAuth, async (req, res) => {
   });
 });
 
-// 2. META / INSTAGRAM OAUTH DIRETO
+// ====================================================
+// 2. META / INSTAGRAM OAUTH DIRETO (Abordagem 1)
+// ====================================================
+
+// Obter URL de autorização oficial da Meta
 app.get('/api/auth/meta/url', optionalAuth, (req, res) => {
   const isConfigured = Boolean(META_APP_ID && META_APP_SECRET);
 
@@ -176,6 +186,7 @@ app.get('/api/auth/meta/url', optionalAuth, (req, res) => {
     });
   }
 
+  // Permissões necessárias da Meta para agendamento profissional no Instagram
   const scopes = [
     'instagram_basic',
     'instagram_content_publish',
@@ -194,6 +205,7 @@ app.get('/api/auth/meta/url', optionalAuth, (req, res) => {
   });
 });
 
+// Callback da Meta (recebe o código após o usuário autorizar)
 app.get('/api/auth/meta/callback', async (req, res) => {
   const { code, state, error, error_description } = req.query;
 
@@ -207,6 +219,7 @@ app.get('/api/auth/meta/callback', async (req, res) => {
   }
 
   try {
+    // 1. Trocar código por Short-Lived Access Token
     const tokenRes = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
       params: {
         client_id: META_APP_ID,
@@ -218,6 +231,7 @@ app.get('/api/auth/meta/callback', async (req, res) => {
 
     const shortToken = tokenRes.data.access_token;
 
+    // 2. Trocar por Long-Lived Access Token (dura 60 dias)
     const longTokenRes = await axios.get('https://graph.facebook.com/v19.0/oauth/access_token', {
       params: {
         grant_type: 'fb_exchange_token',
@@ -228,7 +242,9 @@ app.get('/api/auth/meta/callback', async (req, res) => {
     });
 
     const longLivedToken = longTokenRes.data.access_token;
+    const expiresIn = longTokenRes.data.expires_in || 5184000; // 60 dias em segundos
 
+    // 3. Buscar Páginas e Contas do Instagram Business vinculadas
     const accountsRes = await axios.get('https://graph.facebook.com/v19.0/me/accounts', {
       params: {
         fields: 'id,name,instagram_business_account{id,username,name,profile_picture_url,followers_count}',
@@ -246,6 +262,7 @@ app.get('/api/auth/meta/callback', async (req, res) => {
         const ig = page.instagram_business_account;
         const accountId = 'acc_ig_' + ig.id;
 
+        // Salvar ou atualizar no banco de dados
         await run(`
           INSERT INTO connected_accounts (
             id, user_id, platform, platform_account_id, username, name, profile_picture_url, access_token, followers_count, is_active
@@ -277,6 +294,7 @@ app.get('/api/auth/meta/callback', async (req, res) => {
   }
 });
 
+// Simulação de Conexão Rápida da Meta (Modo de Demonstração antes de ter as chaves oficiais)
 app.post('/api/auth/meta/mock-connect', optionalAuth, async (req, res) => {
   try {
     const { username, platform, name, followers } = req.body;
@@ -318,7 +336,11 @@ app.post('/api/auth/meta/mock-connect', optionalAuth, async (req, res) => {
   }
 });
 
+// ====================================================
 // 3. GESTÃO DE CONTAS DO USUÁRIO
+// ====================================================
+
+// Listar contas do usuário logado
 app.get('/api/user/accounts', optionalAuth, async (req, res) => {
   const userId = req.user ? req.user.id : null;
   if (!userId) {
@@ -334,6 +356,7 @@ app.get('/api/user/accounts', optionalAuth, async (req, res) => {
   res.json({ accounts: accounts || [] });
 });
 
+// Desconectar conta do usuário
 app.delete('/api/user/accounts/:id', optionalAuth, async (req, res) => {
   const userId = req.user ? req.user.id : null;
   if (!userId) return res.status(401).json({ error: 'Não autorizado.' });
@@ -350,7 +373,11 @@ app.delete('/api/user/accounts/:id', optionalAuth, async (req, res) => {
   res.json({ success: true, message: 'Conta desconectada com sucesso.' });
 });
 
-// 4. SPEEDPOST & POSTS
+// ====================================================
+// 4. SPEEDPOST & POSTS (Multi-Tenant)
+// ====================================================
+
+// Status e Conexão da API SpeedPost
 app.get('/api/status', async (req, res) => {
   try {
     const client = getSpeedPostClient(req);
@@ -379,6 +406,7 @@ app.get('/api/status', async (req, res) => {
   }
 });
 
+// Listar Workspaces
 app.get('/api/workspaces', async (req, res) => {
   try {
     const client = getSpeedPostClient(req);
@@ -389,6 +417,7 @@ app.get('/api/workspaces', async (req, res) => {
   }
 });
 
+// Upload de Mídia (Multipart para SpeedPost Cloudflare R2)
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
@@ -427,7 +456,8 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-app.post('/api/posts', optionalAuth, async (req, res) => {
+// Agendar Post (Salva no banco de dados do usuário e envia para a SpeedPost)
+app.post('/api/posts', requireAuth, async (req, res) => {
   try {
     const client = getSpeedPostClient(req);
     const { workspaceId, mediaId, caption, scheduledAt, platform, accountId } = req.body;
@@ -448,15 +478,18 @@ app.post('/api/posts', optionalAuth, async (req, res) => {
     };
     if (accountId) payload.accountId = accountId;
 
+    // 1. Enviar para SpeedPost API
     let remotePostId = null;
     try {
       const response = await client.post('/posts', payload);
       remotePostId = response.data?.postId || response.data?.id;
     } catch (spErr) {
       console.warn('SpeedPost remote schedule returned error:', spErr.response?.data || spErr.message);
+      // If it fails on remote due to ambiguous account or test mode, generate fallback local ID
       remotePostId = 'post_sp_' + Date.now().toString(36);
     }
 
+    // 2. Salvar no banco de dados local multi-tenant
     const userId = req.user ? req.user.id : 'usr_admin';
     const localPostId = remotePostId || ('post_' + Date.now().toString(36));
 
@@ -488,6 +521,7 @@ app.post('/api/posts', optionalAuth, async (req, res) => {
   }
 });
 
+// Status do Post
 app.get('/api/posts/:id', async (req, res) => {
   try {
     const client = getSpeedPostClient(req);
@@ -504,6 +538,7 @@ app.get('/api/posts/:id', async (req, res) => {
   }
 });
 
+// Cancelar Post
 app.delete('/api/posts/:id', optionalAuth, async (req, res) => {
   try {
     const client = getSpeedPostClient(req);
@@ -518,77 +553,89 @@ app.delete('/api/posts/:id', optionalAuth, async (req, res) => {
   }
 });
 
+// Calendário (Fila isolada do Usuário)
 app.get('/api/calendar', optionalAuth, async (req, res) => {
   try {
-    const client = getSpeedPostClient(req);
     const userId = req.user ? req.user.id : null;
+    if (!userId) {
+      return res.json({ posts: [], total: 0 });
+    }
 
-    let remotePosts = [];
+    // Buscar posts do usuário logado
+    const localPosts = await query(`
+      SELECT p.*, a.username as account_username
+      FROM posts p
+      LEFT JOIN connected_accounts a ON p.account_id = a.id
+      WHERE p.user_id = ?
+      ORDER BY p.scheduled_at DESC
+    `, [userId]);
+
+    res.json({ posts: localPosts, total: localPosts.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Analytics & Conteúdo (Escopado por usuário)
+app.get('/api/analytics/account/:accountId', optionalAuth, async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.json({
+        followers: 0,
+        followersGrowth: 0,
+        views: 0,
+        reach: 0,
+        engagement: { likes: 0 },
+        daily: []
+      });
+    }
+    const client = getSpeedPostClient(req);
     try {
-      const queryParams = new URLSearchParams();
-      if (req.query.workspaceId) queryParams.set('workspaceId', req.query.workspaceId);
-      if (req.query.from) queryParams.set('from', req.query.from);
-      if (req.query.to) queryParams.set('to', req.query.to);
-      if (req.query.limit) queryParams.set('limit', req.query.limit || '100');
-
-      const response = await client.get(`/calendar?${queryParams.toString()}`);
-      remotePosts = response.data?.posts || [];
-    } catch (e) {
-      console.warn('SpeedPost calendar query error:', e.message);
+      const response = await client.get(`/accounts/${req.params.accountId}/analytics?period=${req.query.period || '30d'}`);
+      return res.json(response.data);
+    } catch {
+      return res.json({
+        followers: 0,
+        followersGrowth: 0,
+        views: 0,
+        reach: 0,
+        engagement: { likes: 0 },
+        daily: []
+      });
     }
-
-    let localPosts = [];
-    if (userId) {
-      localPosts = await query(`
-        SELECT p.*, a.username as account_username
-        FROM posts p
-        LEFT JOIN connected_accounts a ON p.account_id = a.id
-        WHERE p.user_id = ?
-        ORDER BY p.scheduled_at DESC
-      `, [userId]);
-    }
-
-    const combined = [...localPosts];
-    const localIds = new Set(localPosts.map(p => p.id));
-    for (const r of remotePosts) {
-      if (!localIds.has(r.id)) combined.push(r);
-    }
-
-    res.json({ posts: combined, total: combined.length });
   } catch (error) {
-    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-app.get('/api/analytics/account/:accountId', async (req, res) => {
+app.get('/api/content/account/:accountId', optionalAuth, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.json({ items: [] });
+    }
     const client = getSpeedPostClient(req);
-    const response = await client.get(`/accounts/${req.params.accountId}/analytics?period=${req.query.period || '30d'}`);
-    res.json(response.data);
+    try {
+      const response = await client.get(`/accounts/${req.params.accountId}/content?limit=${req.query.limit || '30'}`);
+      return res.json(response.data);
+    } catch {
+      return res.json({ items: [] });
+    }
   } catch (error) {
     res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
   }
 });
 
-app.get('/api/content/account/:accountId', async (req, res) => {
-  try {
-    const client = getSpeedPostClient(req);
-    const response = await client.get(`/accounts/${req.params.accountId}/content?limit=${req.query.limit || '30'}`);
-    res.json(response.data);
-  } catch (error) {
-    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
-  }
-});
-
-// Compliance pages
+// Compliance pages required by Meta (Facebook Developers)
 app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
 app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
 app.get('/data-deletion', (req, res) => res.sendFile(path.join(__dirname, 'public', 'data-deletion.html')));
 
+// Catch-all route to serve SPA
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Iniciar Servidor
 app.listen(PORT, () => {
   console.log(`=======================================================`);
   console.log(` SpeedPost Studio SaaS Multi-Tenant Rodando na porta ${PORT}`);
