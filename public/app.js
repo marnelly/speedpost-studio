@@ -41,6 +41,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadAccountAnalytics();
   await loadPublishedContent();
 
+  if (!state.user) {
+    switchTab('landing');
+  } else {
+    switchTab('studio');
+  }
+
   lucide.createIcons();
 });
 
@@ -93,6 +99,10 @@ function switchTab(tabId) {
   if (tabId === 'calendar') renderCalendar();
   if (tabId === 'accounts') loadUserConnectedAccounts();
   if (tabId === 'analytics' && state.analyticsData) renderAnalyticsChart();
+
+  if (tabId === 'landing' || tabId === 'studio') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 // ----------------------------------------------------
@@ -152,9 +162,31 @@ function updateUserAuthHeader() {
   const accUser = document.getElementById('account-username');
   const accFoll = document.getElementById('account-followers');
   const avatarContainer = document.getElementById('account-avatar-container');
+  const appNav = document.getElementById('app-nav-tabs');
+  const guestNav = document.getElementById('guest-nav-links');
+  const mobileNavApp = document.getElementById('mobile-nav-app');
+  const mobileNavGuest = document.getElementById('mobile-nav-guest');
+  const quickBtn = document.getElementById('header-quick-action-btn');
+
   if (!container) return;
 
   if (state.user) {
+    // Show App Nav, hide Guest Nav
+    appNav?.classList.remove('hidden');
+    appNav?.classList.add('flex');
+    guestNav?.classList.add('hidden');
+    guestNav?.classList.remove('lg:flex');
+
+    mobileNavApp?.classList.remove('hidden');
+    mobileNavApp?.classList.add('flex');
+    mobileNavGuest?.classList.add('hidden');
+    mobileNavGuest?.classList.remove('flex');
+
+    if (quickBtn) {
+      quickBtn.innerHTML = `<i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i><span>Novo Post</span>`;
+      quickBtn.className = 'hidden sm:flex px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-md shadow-brand-600/30 items-center gap-1.5 transition-all active:scale-95';
+    }
+
     const initials = state.user.name ? state.user.name.substring(0, 2).toUpperCase() : 'US';
     container.innerHTML = `
       <div class="flex items-center gap-2 bg-dark-950/80 p-1 pl-2.5 rounded-xl border border-white/10">
@@ -184,6 +216,22 @@ function updateUserAuthHeader() {
       badge?.classList.add('hidden');
     }
   } else {
+    // Show Guest Nav, hide App Nav
+    appNav?.classList.add('hidden');
+    appNav?.classList.remove('flex');
+    guestNav?.classList.remove('hidden');
+    guestNav?.classList.add('lg:flex');
+
+    mobileNavApp?.classList.add('hidden');
+    mobileNavApp?.classList.remove('flex');
+    mobileNavGuest?.classList.remove('hidden');
+    mobileNavGuest?.classList.add('flex');
+
+    if (quickBtn) {
+      quickBtn.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5 text-amber-300"></i><span>Começar Grátis</span>`;
+      quickBtn.className = 'hidden sm:flex px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-brand-600/30 items-center gap-1.5 transition-all active:scale-95';
+    }
+
     container.innerHTML = `
       <button onclick="openAuthModal('login')" class="px-3.5 py-1.5 rounded-xl bg-dark-900 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
         <i data-lucide="user" class="w-3.5 h-3.5"></i> Entrar
@@ -195,6 +243,23 @@ function updateUserAuthHeader() {
     badge?.classList.add('hidden');
   }
   lucide.createIcons();
+}
+
+function handleLogoClick(e) {
+  if (e) e.preventDefault();
+  if (state.user) {
+    switchTab('studio');
+  } else {
+    switchTab('landing');
+  }
+}
+
+function handleQuickActionBtn() {
+  if (state.user) {
+    switchTab('studio');
+  } else {
+    openAuthModal('register');
+  }
 }
 
 function openAuthModal(mode = 'login') {
@@ -272,6 +337,7 @@ async function handleAuthSubmit(e) {
       // Refresh data for logged in user
       await loadUserConnectedAccounts();
       await loadCalendarPosts();
+      switchTab('studio');
     } else {
       throw new Error(data.error || 'Falha ao autenticar.');
     }
@@ -298,6 +364,7 @@ function logout() {
   loadPublishedContent();
   document.getElementById('tab-btn-settings')?.classList.add('hidden');
   document.getElementById('m-tab-settings')?.classList.add('hidden');
+  switchTab('landing');
 }
 
 // ----------------------------------------------------
@@ -1149,11 +1216,7 @@ function renderMonthView() {
                 ${p.caption ? p.caption.substring(0, 18) + '...' : 'Vídeo'}
               </div>
             `;
-          }).join('')}
-          ${postsOnDay.length > 2 ? `<div class="text-[9px] text-gray-500">+${postsOnDay.length - 2} mais</div>` : ''}
-        </div>
-      </div>
-    `;
+          }).join('')}\n          ${postsOnDay.length > 2 ? `<div class="text-[9px] text-gray-500">+${postsOnDay.length - 2} mais</div>` : ''}\n        </div>\n      </div>\n    `;
   }
 
   grid.innerHTML = html;
